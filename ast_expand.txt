@@ -1,0 +1,55 @@
+DeriveInput { 
+attrs: [Attribute { 
+	pound_token: Pound, 
+	style: AttrStyle::Outer, 
+	bracket_token: Bracket, 
+	meta: Meta::List { 
+		path: Path { leading_colon: None, segments: [PathSegment { ident: Ident { ident: "mapper", span: #0 bytes(157..163) }, arguments: PathArguments::None }] }, 
+		delimiter: MacroDelimiter::Paren(Paren), 
+		tokens: TokenStream [Ident { ident: "dto", span: #0 bytes(164..167) }, 
+		Punct { ch: '=', spacing: Alone, span: #0 bytes(167..168) }, 
+		Literal { kind: Str, symbol: "AnswerDto", suffix: None, span: #0 bytes(168..179) }, 
+		Punct { ch: ',', spacing: Alone, span: #0 bytes(180..181) }, 
+		Ident { ident: "map", span: #0 bytes(182..185) }, 
+		Punct { ch: '=', spacing: Alone, span: #0 bytes(185..186) }, 
+		Group { delimiter: Bracket, 
+			stream: TokenStream [Group { delimiter: Parenthesis, stream: TokenStream [Literal { kind: Str, symbol: "username:login", suffix: None, span: #0 bytes(188..204) }, Punct { ch: ',', spacing: Alone, span: #0 bytes(204..205) }, Ident { ident: "true", span: #0 bytes(205..209) }], span: #0 bytes(187..210) }, Punct { ch: ',', spacing: Alone, span: #0 bytes(210..211) }, Group { delimiter: Parenthesis, stream: TokenStream [Literal { kind: Str, symbol: "email", suffix: None, span: #0 bytes(213..220) }, Punct { ch: ',', spacing: Alone, span: #0 bytes(220..221) }, Ident { ident: "false", span: #0 bytes(221..226) }], span: #0 bytes(212..227) }], span: #0 bytes(186..228) }] } 
+	}, 
+	
+	Attribute { pound_token: Pound, style: AttrStyle::Outer, bracket_token: Bracket, meta: Meta::List { path: Path { leading_colon: None, segments: [PathSegment { ident: Ident { ident: "mapper", span: #0 bytes(233..239) }, arguments: PathArguments::None }] }, delimiter: MacroDelimiter::Paren(Paren), tokens: TokenStream [Ident { ident: "dto", span: #0 bytes(240..243) }, Punct { ch: '=', spacing: Alone, span: #0 bytes(243..244) }, Literal { kind: Str, symbol: "ProfileDto", suffix: None, span: #0 bytes(244..256) }, Punct { ch: ',', spacing: Alone, span: #0 bytes(256..257) }, Ident { ident: "all_fields", span: #0 bytes(258..268) }, Punct { ch: '=', spacing: Alone, span: #0 bytes(268..269) }, Ident { ident: "true", span: #0 bytes(269..273) }, Punct { ch: ',', spacing: Alone, span: #0 bytes(273..274) }, Ident { ident: "except", span: #0 bytes(275..281) }, Punct { ch: '=', spacing: Alone, span: #0 bytes(281..282) }, Group { delimiter: Bracket, stream: TokenStream [Literal { kind: Str, symbol: "password", suffix: None, span: #0 bytes(283..293) }, Punct { ch: ',', spacing: Alone, span: #0 bytes(293..294) }, Literal { kind: Str, symbol: "age", suffix: None, span: #0 bytes(295..300) }], span: #0 bytes(282..301) }, Punct { ch: ',', spacing: Alone, span: #0 bytes(301..302) }, Ident { ident: "map", span: #0 bytes(304..307) }, Punct { ch: '=', spacing: Alone, span: #0 bytes(307..308) }, Group { delimiter: Bracket, stream: TokenStream [Group { delimiter: Parenthesis, stream: TokenStream [Literal { kind: Str, symbol: "username:login", suffix: None, span: #0 bytes(310..326) }, Punct { ch: ',', spacing: Alone, span: #0 bytes(326..327) }, Ident { ident: "true", span: #0 bytes(327..331) }], span: #0 bytes(309..332) }], span: #0 bytes(308..333) }] } 
+	}
+], //End of attrs Array
+
+vis: Visibility::Inherited, 
+
+ident: Ident { ident: "User", span: #0 bytes(344..348) }, 
+generics: Generics { lt_token: None, params: [], gt_token: None, where_clause: None }, 
+
+data: Data::Struct { 
+	struct_token: Struct, 
+	fields: Fields::Named { 
+		brace_token: Brace, 
+		named: [Field { attrs: [], vis: Visibility::Inherited, mutability: FieldMutability::None, ident: Some(Ident { ident: "username", span: #0 bytes(354..362) }), colon_token: Some(Colon), ty: Type::Path { qself: None, path: Path { leading_colon: None, segments: [PathSegment { ident: Ident { ident: "String", span: #0 bytes(364..370) }, arguments: PathArguments::None }] } } }, 
+		
+		Comma, 
+		
+		Field { attrs: [], vis: Visibility::Inherited, mutability: FieldMutability::None, ident: Some(Ident { ident: "password", span: #0 bytes(376..384) }), colon_token: Some(Colon), ty: Type::Path { qself: None, path: Path { leading_colon: None, segments: [PathSegment { ident: Ident { ident: "String", span: #0 bytes(386..392) }, arguments: PathArguments::None }] } } }, 
+		
+		Comma, 
+		
+		Field { attrs: [], vis: Visibility::Inherited, mutability: FieldMutability::None, ident: Some(Ident { ident: "email", span: #0 bytes(398..403) }), colon_token: Some(Colon), ty: Type::Path { qself: None, path: Path { leading_colon: None, segments: [PathSegment { ident: Ident { ident: "Option", span: #0 bytes(406..412) }, arguments: PathArguments::AngleBracketed { colon2_token: None, lt_token: Lt, args: [GenericArgument::Type(Type::Path { qself: None, path: Path { leading_colon: None, segments: [PathSegment { ident: Ident { ident: "String", span: #0 bytes(413..419) }, arguments: PathArguments::None }] } })], gt_token: Gt } }] } } }, 
+		
+		Comma, 
+		
+		Field { attrs: [], vis: Visibility::Inherited, mutability: FieldMutability::None, ident: Some(Ident { ident: "firstname", span: #0 bytes(426..435) }), colon_token: Some(Colon), ty: Type::Path { qself: None, path: Path { leading_colon: None, segments: [PathSegment { ident: Ident { ident: "Option", span: #0 bytes(437..443) }, arguments: PathArguments::AngleBracketed { colon2_token: None, lt_token: Lt, args: [GenericArgument::Type(Type::Path { qself: None, path: Path { leading_colon: None, segments: [PathSegment { ident: Ident { ident: "String", span: #0 bytes(444..450) }, arguments: PathArguments::None }] } })], gt_token: Gt } }] } } }, 
+		
+		Comma, 
+		
+		Field { attrs: [], vis: Visibility::Inherited, mutability: FieldMutability::None, ident: Some(Ident { ident: "lastname", span: #0 bytes(457..465) }), colon_token: Some(Colon), ty: Type::Path { qself: None, path: Path { leading_colon: None, segments: [PathSegment { ident: Ident { ident: "Option", span: #0 bytes(467..473) }, arguments: PathArguments::AngleBracketed { colon2_token: None, lt_token: Lt, args: [GenericArgument::Type(Type::Path { qself: None, path: Path { leading_colon: None, segments: [PathSegment { ident: Ident { ident: "String", span: #0 bytes(474..480) }, arguments: PathArguments::None }] } })], gt_token: Gt } }] } } }, 
+		
+		Comma, 
+		
+		Field { attrs: [], vis: Visibility::Inherited, mutability: FieldMutability::None, ident: Some(Ident { ident: "age", span: #0 bytes(487..490) }), colon_token: Some(Colon), ty: Type::Path { qself: None, path: Path { leading_colon: None, segments: [PathSegment { ident: Ident { ident: "u8", span: #0 bytes(493..495) }, arguments: PathArguments::None }] } } }, Comma] }, semi_token: None 
+}//end of Data
+
+}//end of Derive
