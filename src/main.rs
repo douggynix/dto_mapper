@@ -6,10 +6,8 @@ extern crate dto_mapper;
 use dto_mapper::DtoMapper;
 
 #[derive(DtoMapper,Debug)]
-#[mapper(map=[(" username: login",true)],
-derive=(Debug,Default,Eq), 
-dto="ProfileDto", include_all=true, except=["password", "age"])]
-#[mapper(dto="LoginDto" , map=[("username",true),("password",true)])]
+#[mapper(dto="ProfileDto", map=[("username: login",true), ("password",true)], derive=(Debug,Default,Eq) )]
+#[mapper(dto="LoginDto" , map=[("username:login",true),("firstname:name",false)] , ignore=["password", "age"]) ]
 struct User{
     username: String,
     password: String,

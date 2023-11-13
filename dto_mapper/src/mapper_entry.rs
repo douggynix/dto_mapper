@@ -1,4 +1,6 @@
-use syn::{Attribute, LitStr, meta::ParseNestedMeta, parse_quote, Meta, punctuated::Punctuated, Token, Expr, Lit};
+use syn::{Attribute, Meta, punctuated::Punctuated, Token, Expr, Lit, spanned::Spanned};
+
+use crate::utils;
 
 
 pub type MapTuple = (String,bool);
@@ -6,8 +8,8 @@ pub type MapTuple = (String,bool);
 pub struct MapperEntry{
     pub dto: String,
     pub map : Vec<MapValue>,
-    pub except:Vec<String>,
-    pub include_all: bool,
+    pub ignore:Vec<String>,
+    //pub include_all: bool,
     pub derive: Vec<String>,
 }
 
@@ -16,7 +18,7 @@ pub struct MapperEntry{
 #[derive(Debug)]
 pub struct MapValue{
     //Literal value are consited of properties with key=value
-    // dto="MyDto" , except="true"
+    // dto="MyDto" , ignore="true"
     pub from_field: String,
     pub to_field: Option<String>,
     pub required: bool,
@@ -48,10 +50,11 @@ impl MapValue {
         Self { from_field, to_field, required }
     }
 }
+
 const DTO: &'static str = "dto";
 const MAP: &'static str = "map";
-const EXCEPT: &'static str = "except";
-const ALL_FIELD: &'static str = "include_all";
+const IGNORE: &'static str = "ignore";
+//const ALL_FIELD: &'static str = "include_all";
 const DERIVE: &'static str = "derive";
 
 impl MapperEntry{
@@ -62,10 +65,12 @@ impl MapperEntry{
 
         let mut mapper_entry = MapperEntry::default();
 
+        //dto property is required
+        let mut dto_prop:  Option<String> = None;
         nested.iter().for_each(|meta| {
             if let Meta::NameValue(metaname) = meta {
                 let ident = metaname.path.get_ident().unwrap();
-                let keyname = remove_white_space(& ident.to_string());
+                let keyname = utils::remove_white_space(& ident.to_string());
                 //println!("keyname={}",keyname);
 
                 //if we got literal values such as keyname="value" or keyname=true
@@ -75,14 +80,7 @@ impl MapperEntry{
                         if let Lit::Str(lit_str) = & expr.lit {
                             //println!("{}={}",keyname,lit_str.value())
                             mapper_entry.dto = lit_str.value();
-                        }
-                    }
-
-                    if keyname.eq_ignore_ascii_case(ALL_FIELD){
-                        //we should read the string value
-                        if let Lit::Bool(bool_lit) = & expr.lit {
-                            //println!("{}={}",keyname,bool_lit.value())
-                            mapper_entry.include_all = bool_lit.value;
+                            dto_prop = Some(lit_str.value());
                         }
                     }
                 }
@@ -96,12 +94,21 @@ impl MapperEntry{
                         //println!("{}={:?}",keyname,map_tuple);
                         mapper_entry.map = map_tuples.iter()
                                             .map(MapValue::new).collect();
+                        if mapper_entry.map.iter()
+                        .filter(|&m_val| utils::isblank(&m_val.from_field)).count() > 0 {
+                            panic!("`map` attribute must not be blank");
+                        };
                     }
-                    else if keyname.eq_ignore_ascii_case(EXCEPT){
-                        //except is a vec of string such as except=["val1","val2"]
-                        let except_arr = Self::parse_array_of_string(expr_arr);
-                        //println!("{}={:?}",keyname, except_arr);
-                        mapper_entry.except = except_arr;
+                    else if keyname.eq_ignore_ascii_case(IGNORE){
+                        //ignore is a vec of string such as ignore=["val1","val2"]
+                        let ignore_arr = Self::parse_array_of_string(expr_arr);
+                        //println!("{}={:?}",keyname, ignore_arr);
+                        //check if matt attribute is blank
+                        if ignore_arr.iter()
+                        .filter(|&text| utils::isblank(text)).count() > 0 {
+                            panic!("`ignore` attribute must not be blank");
+                        };
+                        mapper_entry.ignore = ignore_arr;
                     }
                 }
 
@@ -126,7 +133,14 @@ impl MapperEntry{
             }
         });
 
-        syn::Result::Ok(mapper_entry)
+        //dto property is required and must be checked
+        match dto_prop {
+            Some(val) if utils::isblank(&val) =>Err(syn::Error::new(attr.span(), "`dto` property is blank. It must not have whitespace")),
+            None => Err(syn::Error::new(attr.span(), "`dto` property is missing.It is required for mapper")),
+            _ => syn::Result::Ok(mapper_entry)
+        }
+
+        
     }
 
 
@@ -142,7 +156,7 @@ impl MapperEntry{
                     if let Expr::Lit(content_lit) = content_expr{
                         if let Lit::Str(content) = & content_lit.lit{
                             //print!("valueStr={}",content.value());
-                            str_val = remove_white_space(&content.value()).into();
+                            str_val = utils::remove_white_space(&content.value()).into();
                         }
     
                         if let Lit::Bool(content) = & content_lit.lit{
@@ -171,7 +185,7 @@ impl MapperEntry{
                 //println!("{} content  is a String",keyname);
                 if let Lit::Str(content) = & lit_expr.lit{
                     //print!("valueStr={}, ",content.value());
-                    vec_str.push(remove_white_space(& content.value()));
+                    vec_str.push(utils::remove_white_space(& content.value()));
                 }
     
             }
@@ -181,9 +195,3 @@ impl MapperEntry{
 
 }
 
-
-fn remove_white_space(str: &String) -> String{
-    str.as_str().chars()
-    .filter(|c| !c.is_whitespace())
-    .collect()
-}
