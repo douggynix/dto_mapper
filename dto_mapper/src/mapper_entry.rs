@@ -13,9 +13,8 @@ pub struct MapperEntry{
     pub derive: Vec<String>,
 }
 
-
 //DataStructure for the type of mapper values found in each entry
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct MapValue{
     //Literal value are consited of properties with key=value
     // dto="MyDto" , ignore="true"
@@ -61,9 +60,10 @@ impl MapperEntry{
     pub fn build(attr: &Attribute) -> syn::Result<Self>{
         
         let nested = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated)?;
-        println!("nested count={:?}",nested.iter().count());
+        //println!("nested count={:?}",nested.iter().count());
 
         let mut mapper_entry = MapperEntry::default();
+        mapper_entry.derive.push("Default".to_string());
 
         //dto property is required
         let mut dto_prop:  Option<String> = None;
@@ -127,8 +127,11 @@ impl MapperEntry{
                                 "".to_string()
                             }
                         }).collect::<Vec<String>>();
-
-                mapper_entry.derive = derive_items;    
+                derive_items.iter()
+                .filter(|&val| !val.eq("Default"))
+                .map(|val| val.clone())
+                .for_each(|val| mapper_entry.derive.push(val) );
+                //mapper_entry.derive = derive_items;    
                 }
             }
         });
@@ -166,7 +169,7 @@ impl MapperEntry{
                     }
                 }
     
-                if(str_val.is_some() && flag.is_some()){
+                if str_val.is_some() && flag.is_some(){
                     let tuple : MapTuple = ( str_val.unwrap() , flag.unwrap() );
                     vec_tuple.push( tuple);
                 }   
@@ -184,7 +187,7 @@ impl MapperEntry{
             if let Expr::Lit(lit_expr) = elem{
                 //println!("{} content  is a String",keyname);
                 if let Lit::Str(content) = & lit_expr.lit{
-                    //print!("valueStr={}, ",content.value());
+                    //fprint!("valueStr={}, ",content.value());
                     vec_str.push(utils::remove_white_space(& content.value()));
                 }
     

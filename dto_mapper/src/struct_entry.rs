@@ -9,7 +9,9 @@ pub struct StructEntry{
 }
 
 
+
 //FieldEntry will hold data about a field from a struct such that its name, and its type
+#[derive(Clone)]
 pub struct FieldEntry{
     pub field_name: String,
     pub field_type: Type,

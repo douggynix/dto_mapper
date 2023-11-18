@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dto_derive = { path = "dto_derive"}
 dto_mapper = { path = "dto_mapper" }
 syn = { version = "2.0.39", features = ["full"] }
 

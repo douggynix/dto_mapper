@@ -17,7 +17,7 @@ pub enum ValidationError{
 }
 
 
-pub fn validate_entry_data(st_entry: &StructEntry, mp_entries: Vec<MapperEntry>) -> Result<(), ValidationError>{
+pub fn validate_entry_data(st_entry: &StructEntry, mp_entries: &Vec<MapperEntry>) -> Result<(), ValidationError>{
     validate_mapper_entries(& mp_entries)?;
     validate_struct_entry(st_entry, & mp_entries)?;
     validate_dto_name(&mp_entries)?;
@@ -110,12 +110,12 @@ fn validate_mapper_entries(mp_entries: &Vec<MapperEntry>) -> Result<(), Validati
                 else { to_set.insert(to_field.to_string(), 1); }
             }
         });
-        println!();
-        println!("dto={} from_field_map={:?}",mp_entry.dto,from_set);
-        println!("dto={} to_field_map={:?}",mp_entry.dto,to_set);
+        //println!();
+         //println!("======dto={} from_field_map={:?}",mp_entry.dto,from_set);
+         //println!("======dto={} to_field_map={:?}",mp_entry.dto,to_set);
 
 
-        // to_keys.len() will always be lesser than or equal from_keys.len()
+        // to_keys.len() will always be lesser than or equal to from_keys.len()
         let dup_fields : Vec<String>= to_set.iter().filter(|(ref key,&_c)| from_set.contains_key(& key.to_string()) )
         .map(|(ref key,&_c)| key.to_string())
         .collect();

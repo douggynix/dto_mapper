@@ -4,8 +4,8 @@ extern crate quote;
 mod mapper_entry;
 mod struct_entry;
 mod entry_validator;
+mod dto_builder;
 mod utils;
-
 
 use entry_validator::validate_entry_data;
 use mapper_entry::MapperEntry;
@@ -36,18 +36,29 @@ pub fn dto_mapper_proc_macro(input: TokenStream) -> TokenStream{
 
     
     if let Err(error) = validate_entry_data(&struct_entry, 
-        mapper_entries){
+        &mapper_entries){
             panic!("Failed Validating mapper entries with error : {:?}",error);
     }
+    
+    let dtos = dto_builder::generate_dto_stream(& mapper_entries, & struct_entry);
+    //let s= dto_builder::generate_dto_impl(& mapper_entries, & struct_entry); 
+    let dto_impls = dto_builder::generate_impl(&mapper_entries, &struct_entry,true);
+
+    let struct_impls = dto_builder::generate_impl(&mapper_entries, &struct_entry, false);
 
     let expanded = quote! {
-        fn check_mapper(){
-            println!("Hello")
-        }
+        //DTOs generated
+        #(#dtos)*
+        
+        #(#dto_impls)*
+
+        #(#struct_impls)*
     };
 
+    //println!("\n{:?}",expanded.to_string());
     expanded.into()
 }
+
 
 
 fn process_struct_data(input: Box<DeriveInput>) -> syn::Result<StructEntry> {
@@ -57,7 +68,6 @@ fn process_struct_data(input: Box<DeriveInput>) -> syn::Result<StructEntry> {
 const MAPPER : &'static str = "mapper";
 
 fn get_mapper_entries(input: Box<DeriveInput>) -> syn::Result<Vec<MapperEntry>>{
-    let mut has_mapper = false;
     let mapper_attrs: Vec<&Attribute> = input.attrs.iter()
     .filter(| & a| a.path().is_ident(MAPPER))
     .collect::<Vec<&Attribute>>();
@@ -65,10 +75,10 @@ fn get_mapper_entries(input: Box<DeriveInput>) -> syn::Result<Vec<MapperEntry>>{
     let mut mapper_entries: Vec<MapperEntry> = Vec::new();
 
     for attr in mapper_attrs{
-        println!("=======MapperEntry===============");
+        //println!("=======MapperEntry===============");
         let build_result  = MapperEntry::build(attr);
         if let Ok(mapper_entry) = build_result{
-            println!("{:?}",mapper_entry);
+            //println!("{:?}",mapper_entry);
             mapper_entries.push(mapper_entry);
         }
         else if let Err(error) = build_result { 
@@ -77,6 +87,3 @@ fn get_mapper_entries(input: Box<DeriveInput>) -> syn::Result<Vec<MapperEntry>>{
     }
     syn::Result::Ok(mapper_entries)
 }
-
-
-
