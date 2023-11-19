@@ -5,7 +5,8 @@ use crate::{mapper_entry::{MapperEntry, MapValue}, struct_entry::{StructEntry, F
 use proc_macro2::TokenStream;
 use quote::quote;
 
-pub fn generate_dto_stream(mapper_entries: & Vec<MapperEntry>, struct_entry: &StructEntry) -> Vec<proc_macro2::TokenStream> /*impl Iterator< Item = proc_macro2::TokenStream>*/ {
+//this is to generate the dto structure along with the fields
+pub fn generate_dto_stream(mapper_entries: & Vec<MapperEntry>, struct_entry: &StructEntry) -> Vec<TokenStream>  {
     let dtos =mapper_entries.iter().map(|mapper_entry|{
         let mappings = build_fields(&struct_entry,& mapper_entry);
         let dto = utils::create_ident(mapper_entry.dto.as_str());
@@ -33,12 +34,10 @@ pub fn generate_dto_stream(mapper_entries: & Vec<MapperEntry>, struct_entry: &St
         }
     });
 
-    let dtos : Vec<proc_macro2::TokenStream> = dtos.collect();
-
-    dtos
+    dtos.collect()
 }
 
-
+//this is to build the implementation of Into trait for Dto and original structure
 pub fn generate_impl(mapper_entries: & Vec<MapperEntry>, struct_entry: &StructEntry, is_dto: bool) -> Vec<TokenStream>{
     let impls : Vec<TokenStream> = mapper_entries.iter().map(|mp_entry| {
         
@@ -82,10 +81,10 @@ pub fn generate_impl(mapper_entries: & Vec<MapperEntry>, struct_entry: &StructEn
     impls
 }
 
-
+//this is a fundamental function to build the fields for Into trait traits such as field1 : field2
 pub fn build_into_fields(st_entry: &StructEntry, mp_entry: &MapperEntry, is_dto: bool) -> Vec<TokenStream> {
         //we retrieve a hashmap of MapValue with key=source_field_name in the struct , and the the value as MapValue
-        let map_fields = get_mapvalue_map(mp_entry);
+        let map_fields = get_map_of_mapvalue(mp_entry);
 
         // Let us retrieve the ignore fields
         let ignore_fields = get_ignore_fields(mp_entry);
@@ -95,8 +94,6 @@ pub fn build_into_fields(st_entry: &StructEntry, mp_entry: &MapperEntry, is_dto:
         let tk_stream_iterator= selected_fields.iter()
         .map(  |field|{
             let mut name =  format!("{}",field.field_name.to_string());
-            let mut name_ident = utils::create_ident(name.as_str());
-
             //first we assume that is_dto = true  (building initialization macro for dto init field for Into trait)
             // build fields for initialization such that #left_name = self.#right_name
             //the right_name contains the struct field value
@@ -139,7 +136,7 @@ pub fn build_into_fields(st_entry: &StructEntry, mp_entry: &MapperEntry, is_dto:
 
 fn build_fields(st_entry: &StructEntry, mp_entry: &MapperEntry) -> Vec<TokenStream> {  
     //we retrieve a hashmap of MapValue with key=source_field_name in the struct , and the the value as MapValue
-    let map_fields = get_mapvalue_map(mp_entry);
+    let map_fields = get_map_of_mapvalue(mp_entry);
 
     // Let us retrieve the ignore fields
     let ignore_fields = get_ignore_fields(mp_entry);
@@ -186,7 +183,7 @@ fn get_selected_fields(st_entry: &StructEntry, ignore_fields: &HashSet<String>, 
         .collect()
 }
 
-fn get_mapvalue_map(mp_entry: &MapperEntry) -> HashMap<String, MapValue> {
+fn get_map_of_mapvalue(mp_entry: &MapperEntry) -> HashMap<String, MapValue> {
     let mut map_fields: HashMap<String,MapValue> = HashMap::new();
     mp_entry.map.iter()
     .for_each(|mp_val| {

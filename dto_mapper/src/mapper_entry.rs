@@ -115,23 +115,25 @@ impl MapperEntry{
 
                 if let Expr::Tuple(tuple_expr) = & metaname.value {
                     //println!("keyname {} is Tuple of literal value",keyname);
-                    let derive_items = tuple_expr.elems
-                        .iter()
-                        .map(|elem_expr| {
-                            if let Expr::Path(path_exp)= & elem_expr{
-                                let ident = path_exp.path.get_ident().unwrap();
-                                let derive_obj : String = ident.to_string();
-                                derive_obj
-                            }
-                            else{
-                                "".to_string()
-                            }
-                        }).collect::<Vec<String>>();
-                derive_items.iter()
-                .filter(|&val| !val.eq("Default"))
-                .map(|val| val.clone())
-                .for_each(|val| mapper_entry.derive.push(val) );
-                //mapper_entry.derive = derive_items;    
+                    if keyname.eq_ignore_ascii_case(DERIVE) {
+                        let derive_items = tuple_expr.elems
+                            .iter()
+                            .map(|elem_expr| {
+                                if let Expr::Path(path_exp)= & elem_expr{
+                                    let ident = path_exp.path.get_ident().unwrap();
+                                    let derive_obj : String = ident.to_string();
+                                    derive_obj
+                                }
+                                else{
+                                    "".to_string()
+                                }
+                            }).collect::<Vec<String>>();
+                        derive_items.iter()
+                            .filter(|&val| !val.eq("Default"))
+                            .map(|val| val.clone())
+                            .for_each(|val| mapper_entry.derive.push(val) );
+                        //mapper_entry.derive = derive_items;
+                    }
                 }
             }
         });
