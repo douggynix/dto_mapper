@@ -3,7 +3,6 @@
         "./Cargo.toml",
         "./Cargo.toml",
         "./Cargo.toml",
-        "./dto_mapper/Cargo.toml"
     ],
     "rust-analyzer.diagnostics.experimental.enable": true,
     "rust-analyzer.trace.server": "verbose",
