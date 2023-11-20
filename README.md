@@ -10,9 +10,10 @@ and the power of macro derive attributes embedded in rust. The dtos are generate
 resulted after buil time. I would recommend using Visual Studio code with rust analyzer plugin installed for auto-completion and a nicer developer experience with preview of field names when hovering 
 over a dto structure.
 
-# Usage
+# Summary
 This library can be used by web applications which used to do data transformation between database and the controller that sends information to the user using DAO(Data Access Object) pattern.
 Let's consider a User Entity used by an application to store into and retrieve records for a user from a database. Let's describe our User entity like this:
+```rust
     struct User{
         username: String,
         password: String,
@@ -21,6 +22,29 @@ Let's consider a User Entity used by an application to store into and retrieve r
         middle_name: Option<String>,
         lastname: String,
         age: u8,
-    }`
-`
+    }
+```
+If we have to load a 'user' record from a database, we wouldn't want to send all this information back to a webpage for different scenario. We would want to remove the **password** information from the user if we need to reuse it to send it to a webpage. One will insist that we can use Json Serializer Library and annotate the password field in such a way we can ignore it. Well, let's push it a little bit further. If we have a Backend application that serves client for Authentication request,Profile Information request, or to request other information in form of other data mix that would want only the firstname, lastname and the age of that person. Json annotation wouldn't help. And we would have to create by hands each of those Objects and repeated the same information and implement proper methods to convert one to another. That sounds like too much work.
+This is where DTO Mapper Library comes handy.
 
+# Example
+Let's say we want to create 2 special entities for our application
+- LoginDto that will contain only 2 fields from **User** such as _**username**_ and _**password**_. we would like to rename _**username**_ to _**login**_ in LoginDto
+- ProfileDto that will contain all fields from **User** and  will ignore only the **password** field.
+- PersonDto that will contain only 3 fields from  **User** such as _**firstname**_, _**lastname**_, and _**email**_. But we would like to make the _**email**_ field optional such that its final data type will be  _**Option<T>**_. That is if email is **String** from User, it will result in _**Option<String>**_
+
+  ```rust
+    #[derive(DtoMapper,Default,Clone)]
+    #[mapper( dto="LoginDto"  , map=[ ("username:login",true) , ("password",true)] , derive=(Debug, Clone, PartialEq) )]
+    #[mapper( dto="ProfileDto" , ignore=["password"]  , derive=(Debug, Clone, PartialEq) )]
+    #[mapper( dto="PersonDto" , map=[ ("firstname",true), ("lastname",true), ("email",false) ]  )]
+    struct User{
+        username: String,
+        password: String,
+        email: String,
+        firstname: String,
+        middle_name: Option<String>,
+        lastname: String,
+        age: u8,
+    }
+  ```
