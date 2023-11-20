@@ -9,8 +9,8 @@ homepage = "https://github.com/douggynix/dto_mapper"
 documentation = "https://github.com/douggynix/dto_mapper/tree/0.1.2"
 readme = "README.md"
 license = "Apache-2.0"
-categories = ["Data Structures", "Web Programming", "Rust patterns"]
-keywords = ["DTO", "DTO Mapper", "Data Transfer Object", "DTO Pattern", "Model Mapper"]
+categories = ["data-structures", "web-programming", "rust-patterns"]
+keywords = ["dto", "dto-mapper", "data-transfer-object", "dto-pattern", "model-mapper"]
 exclude = [
     ".github/workflows/rust.yml",
     ".vscode/settings.json",
