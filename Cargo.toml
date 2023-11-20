@@ -1,8 +1,16 @@
 [package]
 name = "dto_mapper"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2021"
 authors = ["James Douglass Lefruit"]
+description = "A library to create dynamic DTOs (Data Transfer Object) from a structure"
+repository = "https://github.com/douggynix/dto_mapper"
+homepage = "https://github.com/douggynix/dto_mapper"
+documentation = "https://github.com/douggynix/dto_mapper/tree/0.1.0"
+readme = "https://github.com/douggynix/dto_mapper/blob/0.1.0/README.md"
+license = "Apache-2.0"
+categories = ["Data Structures", "Web Programming", "Rust patterns"]
+keywords = ["DTO", "DTO Mapper", "Data Transfer Object", "Mapper", "DTO Pattern", "Design Pattern", "Model Mapper","Data Model"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
