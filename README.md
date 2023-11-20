@@ -27,6 +27,16 @@ Let's consider a User Entity used by an application to store into and retrieve r
 If we have to load a 'user' record from a database, we wouldn't want to send all this information back to a webpage for different scenario. We would want to remove the **password** information from the user if we need to reuse it to send it to a webpage. One will insist that we can use Json Serializer Library and annotate the password field in such a way we can ignore it. Well, let's push it a little bit further. If we have a Backend application that serves client for Authentication request,Profile Information request, or to request other information in form of other data mix that would want only the firstname, lastname and the age of that person. Json annotation wouldn't help. And we would have to create by hands each of those Objects and repeated the same information and implement proper methods to convert one to another. That sounds like too much work.
 This is where DTO Mapper Library comes handy.
 
+# Installation
+You can use this instruction to install the latest version of **dto_mapper** library to your project
+```shell
+cargo add dto_mapper
+```
+And import it to the rust source file you need to use it:
+```rust
+use dto_mapper::DtoMapper;
+```
+
 # Example
 Let's say we want to create 3 special entities for our application
 - LoginDto that will contain only 2 fields from **User** such as _**username**_ and _**password**_. we would like to rename _**username**_ to _**login**_ in LoginDto
@@ -36,6 +46,8 @@ Let's say we want to create 3 special entities for our application
 It takes only those lines below to get this work done. And the conversion are being done automatically between one dto type to the original struct and vice versa.
 
   ```rust
+    use dto_mapper::DtoMapper;
+
     #[derive(DtoMapper,Default,Clone)]
     #[mapper( dto="LoginDto"  , map=[ ("username:login",true) , ("password",true)] , derive=(Debug, Clone, PartialEq) )]
     #[mapper( dto="ProfileDto" , ignore=["password"]  , derive=(Debug, Clone, PartialEq) )]
@@ -107,3 +119,22 @@ pub struct PersonDto {
     pub lastname: String,
 } // size = 72 (0x48), align = 0x8
 ```
+# Description of macro derive and attributes for Dto Mapper
+First, DTO Mapper library requires that the source struct implements Default traits as the library relies on it to implement Into Traits for conversion between DTO and Source struct.
+If not it will result in error in your IDE. It is a must to to derive or implement Default for your source struct.
+```rust
+#[derive(DtoMapper,Default,Clone)]
+struct SourceStruct{ }
+```
+- ## `#[mapper()]` attributes
+  **mapper** attributes can be repeated for as many dtos needed to be created. Each mapper represents a concrent dto struct.  
+  - **Required fields** will result in build errors if not present.
+    - **dto** : name for the dto that will result into a struct with the same name. Example : `dto="MyDto"` will result into a struct named **MyDto**.
+      dto names must be unique. Otherwise, it will result into build errors.
+    - **map** : an array of field names from the original struct to include or  map to the new dto as fields. `map=[("fieldname:new_fieldname", required_flag )]`.
+      `fieldname:new_fieldname` will rename the source field to the new one. It is not mandatory to rename. you can have `map=[("fieldname",true)]`
+      `required_flag` can be true or false. if required_flag is false it will make the field an **Option** type in the dto
+  - **Optional fields**
+    - **ignore** : an array of fieldnames not to include in the destination dtos. `ignore=["field1", "field1"]`
+      if **ignore** is present , then **map** field becomes optional. Except if needed rename destination fields for the dto
+    - **derive** : a list of of macro to derive from. `derive=(Debug,Clone)`
