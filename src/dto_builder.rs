@@ -82,7 +82,7 @@ pub fn generate_impl(mapper_entries: & Vec<MapperEntry>, struct_entry: &StructEn
 }
 
 //this is a fundamental function to build the fields for Into trait traits such as field1 : field2
-pub fn build_into_fields(st_entry: &StructEntry, mp_entry: &MapperEntry, is_dto: bool) -> Vec<TokenStream> {
+fn build_into_fields(st_entry: &StructEntry, mp_entry: &MapperEntry, is_dto: bool) -> Vec<TokenStream> {
         //we retrieve a hashmap of MapValue with key=source_field_name in the struct , and the the value as MapValue
         let map_fields = get_map_of_mapvalue(mp_entry);
 
