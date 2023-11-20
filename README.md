@@ -133,8 +133,11 @@ struct SourceStruct{ }
       dto names must be unique. Otherwise, it will result into build errors.
     - **map** : an array of field names from the original struct to include or  map to the new dto as fields. `map=[("fieldname:new_fieldname", required_flag )]`.
       `fieldname:new_fieldname` will rename the source field to the new one. It is not mandatory to rename. you can have `map=[("fieldname",true)]`
-      `required_flag` can be true or false. if required_flag is false it will make the field an **Option** type in the dto
+      `required_flag` can be true or false. if required_flag is false it will make the field an **Option** type in the dto.
+
+       if `required_flag` is set to true, the destination dto field  will be exactly of the same type with the source one in the struct.
   - **Optional fields**
     - **ignore** : an array of fieldnames not to include in the destination dtos. `ignore=["field1", "field1"]`
+
       if **ignore** is present , then **map** field becomes optional. Except if needed rename destination fields for the dto
     - **derive** : a list of of macro to derive from. `derive=(Debug,Clone)`
