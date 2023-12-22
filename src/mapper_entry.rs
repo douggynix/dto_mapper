@@ -10,6 +10,7 @@ pub struct MapperEntry {
     pub ignore: Vec<String>,
     //pub include_all: bool,
     pub derive: Vec<String>,
+    pub no_builder: bool,
 }
 
 //DataStructure for the type of mapper values found in each entry
@@ -59,12 +60,15 @@ const IGNORE: &'static str = "ignore";
 //const ALL_FIELD: &'static str = "include_all";
 const DERIVE: &'static str = "derive";
 
+const WITHOUT_BUILDER: &'static str = "no_builder";
+
 impl MapperEntry {
     pub fn build(attr: &Attribute) -> syn::Result<Self> {
         let nested = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated)?;
         //println!("nested count={:?}",nested.iter().count());
 
         let mut mapper_entry = MapperEntry::default();
+        //Mapper will always set a Default derive
         mapper_entry.derive.push("Default".to_string());
 
         //dto property is required
@@ -83,6 +87,13 @@ impl MapperEntry {
                             //println!("{}={}",keyname,lit_str.value())
                             mapper_entry.dto = lit_str.value();
                             dto_prop = Some(lit_str.value());
+                        }
+                    }
+
+                    //
+                    if keyname.eq_ignore_ascii_case(WITHOUT_BUILDER) {
+                        if let Lit::Bool(lit_bool) = &expr.lit {
+                            mapper_entry.no_builder = lit_bool.value();
                         }
                     }
                 }
@@ -137,6 +148,12 @@ impl MapperEntry {
                                 }
                             })
                             .collect::<Vec<String>>();
+
+                        //Adding a builder by default if property isn't explicitly set to true
+                        if !mapper_entry.no_builder {
+                            mapper_entry.derive.push("Builder".into());
+                        }
+
                         derive_items
                             .iter()
                             .filter(|&val| !val.eq("Default"))

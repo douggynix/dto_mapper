@@ -1,6 +1,6 @@
 [package]
 name = "dto_mapper"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["James Douglass Lefruit"]
 description = "A library to create dynamic DTOs (Data Transfer Object) from a structure"
@@ -20,8 +20,10 @@ exclude = [
 proc-macro = true
 
 [dependencies]
-derive_builder = "0.12.0"
 proc-macro2 = "1.0.69"
 quote = "1.0.33"
 syn = { version = "2.0.39", features = ["full"] }
+
+[dev-dependencies]
+derive_builder = "0.12.0"
 

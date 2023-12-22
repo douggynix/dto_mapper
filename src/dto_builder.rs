@@ -21,29 +21,32 @@ pub fn generate_dto_stream(
         let mappings = build_fields(&struct_entry, &mapper_entry);
         let dto = utils::create_ident(mapper_entry.dto.as_str());
 
-        if mapper_entry.derive.len() > 0 {
-            let derive_idents: Vec<syn::Ident> = mapper_entry
-                .derive
-                .iter()
-                .map(|derive| {
-                    let ident: syn::Ident = utils::create_ident(derive.as_str());
-                    ident
-                })
-                .collect();
+        let derive_idents: Vec<syn::Ident> = mapper_entry
+            .derive
+            .iter()
+            .map(|derive| {
+                let ident: syn::Ident = utils::create_ident(derive.as_str());
+                ident
+            })
+            .collect();
 
+        if !mapper_entry.no_builder {
             return quote! {
-                 #[derive( #(#derive_idents),* )]
+                #[derive( #(#derive_idents),* )]
+                #[builder(default)]
                 pub struct #dto {
                     #(#mappings),*
                 }
             };
         }
 
-        quote! {
+        //if no_builder=true return without a builder
+        return quote! {
+             #[derive( #(#derive_idents),* )]
             pub struct #dto {
                 #(#mappings),*
             }
-        }
+        };
     });
 
     dtos.collect()

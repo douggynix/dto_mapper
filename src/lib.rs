@@ -1,6 +1,8 @@
 extern crate proc_macro;
 extern crate quote;
-
+#[macro_use]
+#[cfg(test)]
+extern crate derive_builder;
 mod dto_builder;
 mod entry_validator;
 mod mapper_entry;
@@ -21,7 +23,6 @@ use syn::{parse_macro_input, Attribute, DeriveInput};
 
 #[proc_macro_derive(DtoMapper, attributes(mapper))]
 pub fn dto_mapper_proc_macro(input: TokenStream) -> TokenStream {
-    println!("Token_Input: {:?}", input);
     let input = parse_macro_input!(input as DeriveInput);
     let input = Box::new(input);
 
