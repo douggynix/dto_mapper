@@ -2,11 +2,22 @@
 mod test_dto_creation {
     use derive_builder::Builder;
     use dto_mapper::DtoMapper;
+    #[allow(unused)]
+    use std::str::FromStr;
+    #[allow(unused)]
+    use unstringify::unstringify;
 
-    #[derive(DtoMapper, Default, Clone)]
+    fn concat_str(s1: &str, s2: &str) -> String {
+        s1.to_owned() + " " + s2
+    }
+
+    #[derive(DtoMapper, Debug, Default, Clone)]
     #[mapper( dto="LoginDto"  , map=[ ("username:login",true) , ("password",true)] , derive=(Debug, Clone, PartialEq) )]
     #[mapper( dto="ProfileDto" , ignore=["password"]  , derive=(Debug, Clone, PartialEq) )]
     #[mapper( dto="PersonDto" , no_builder=true , map=[ ("firstname",true), ("lastname",true), ("email",false) ]  )]
+    #[mapper( dto="CustomDto" , no_builder=true , map=[ ("email",false) ] , derive=(Debug, Clone) ,
+        new_fields=[( "name: String", "concat_str( self.firstname.as_str(), self.lastname.as_str() )" )]
+    )]
     struct User {
         username: String,
         password: String,
@@ -105,5 +116,21 @@ mod test_dto_creation {
             .build()
             .expect("Failed to build login dto");
         println!("LoginDto built with a builder: {:?}", login_dto);
+    }
+
+    #[test]
+    fn test_custom_dto_expression() {
+        let user = User {
+            firstname: "Dessalines".into(),
+            lastname: "Jean Jacques".into(),
+            ..User::default()
+        };
+
+        let custom_dto: CustomDto = user.clone().into();
+
+        assert_eq!(
+            custom_dto.name,
+            format!("{} {}", user.firstname, user.lastname)
+        );
     }
 }
