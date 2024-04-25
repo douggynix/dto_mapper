@@ -41,9 +41,9 @@ fn validate_map_ignore(mp_entries: &Vec<MapperEntry>) -> Result<(), ValidationEr
         .collect();
 
     if invalid_entries.len() > 0 {
-        return Err(ValidationError::MissingPropertyError(format!(
-            "mapper requires a `map` or an `ignore` property"
-        )));
+        return Err(ValidationError::MissingPropertyError(
+            "mapper requires a `map` or an `ignore` property".to_string(),
+        ));
     }
 
     Ok(())
@@ -59,15 +59,19 @@ fn validate_dto_name(mp_entries: &Vec<MapperEntry>) -> Result<(), ValidationErro
         };
     });
 
-    let dto_dup: Vec<String> = dto_hash
-        .iter()
-        .filter(|(ref _k, &val)| val > 1)
-        .map(|(ref dto_val, &_)| dto_val.to_string())
-        .collect();
+    let dto_dup: Vec<String> = map_hashmap_to_vec_string(&mut dto_hash);
     if dto_dup.len() > 0 {
         return Err(ValidationError::DtoNameDuplicated(dto_dup));
     }
     Ok(())
+}
+
+fn map_hashmap_to_vec_string(dto_hash: &mut HashMap<String, u8>) -> Vec<String> {
+    dto_hash
+        .iter()
+        .filter(|(ref _k, &val)| val > 1)
+        .map(|(ref dto_val, &_)| dto_val.to_string())
+        .collect()
 }
 
 fn validate_struct_entry(
@@ -145,11 +149,7 @@ fn validate_mapper_entries(mp_entries: &Vec<MapperEntry>) -> Result<(), Validati
             )));
         }
 
-        let dup_from: Vec<String> = from_set
-            .iter()
-            .filter(|(ref _key, &count)| count > 1)
-            .map(|(ref k, &_)| k.to_string())
-            .collect();
+        let dup_from: Vec<String> = map_hashmap_to_vec_string(&mut from_set);
 
         if dup_from.len() > 0 {
             errors.push(FieldError::DupField(format!(
@@ -158,11 +158,7 @@ fn validate_mapper_entries(mp_entries: &Vec<MapperEntry>) -> Result<(), Validati
             )));
         }
 
-        let dup_to: Vec<String> = to_set
-            .iter()
-            .filter(|(ref _key, &c)| c > 1)
-            .map(|(ref k, &_)| k.to_string())
-            .collect();
+        let dup_to: Vec<String> = map_hashmap_to_vec_string(&mut to_set);
 
         if dup_to.len() > 0 {
             errors.push(FieldError::DupField(format!(

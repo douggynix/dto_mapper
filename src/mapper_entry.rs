@@ -8,9 +8,9 @@ pub struct MapperEntry {
     pub dto: String,
     pub map: Vec<MapValue>,
     pub ignore: Vec<String>,
-    //pub include_all: bool,
     pub derive: Vec<String>,
     pub no_builder: bool,
+    pub new_fields: Vec<NewField>,
 }
 
 //DataStructure for the type of mapper values found in each entry
@@ -21,6 +21,24 @@ pub struct MapValue {
     pub from_field: String,
     pub to_field: Option<String>,
     pub required: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewField {
+    pub field_name: String,
+    pub field_type: String,
+    //init_value is used compute this field value in the DTO during conversion with into()
+    pub expression_value: String,
+}
+
+impl NewField {
+    pub fn new(name: &str, r#type: &str, init_expression: &str) -> Self {
+        Self {
+            field_name: name.to_string(),
+            field_type: r#type.to_string(),
+            expression_value: init_expression.to_string(),
+        }
+    }
 }
 
 impl Default for MapValue {
@@ -59,8 +77,8 @@ const MAP: &'static str = "map";
 const IGNORE: &'static str = "ignore";
 //const ALL_FIELD: &'static str = "include_all";
 const DERIVE: &'static str = "derive";
-
 const WITHOUT_BUILDER: &'static str = "no_builder";
+const NEW_FIELDS: &'static str = "new_fields";
 
 impl MapperEntry {
     pub fn build(attr: &Attribute) -> syn::Result<Self> {
@@ -113,9 +131,22 @@ impl MapperEntry {
                             .count()
                             > 0
                         {
-                            panic!("`map` attribute must not be blank");
+                            panic!("`{}` attribute must not be blank", MAP);
                         };
-                    } else if keyname.eq_ignore_ascii_case(IGNORE) {
+                    }
+
+                    if keyname.eq_ignore_ascii_case(NEW_FIELDS) {
+                        mapper_entry.new_fields = Self::parse_array_of_new_fields(expr_arr);
+                        //println!("{:?}",mapper_entry.new_fields);
+                        if mapper_entry.new_fields.len() == 0 {
+                            panic!(
+                                "`{}` attribute must not be empty or have odd number of elements",
+                                NEW_FIELDS
+                            );
+                        };
+                    }
+
+                    if keyname.eq_ignore_ascii_case(IGNORE) {
                         //ignore is a vec of string such as ignore=["val1","val2"]
                         let ignore_arr = Self::parse_array_of_string(expr_arr);
                         //println!("{}={:?}",keyname, ignore_arr);
@@ -126,7 +157,7 @@ impl MapperEntry {
                             .count()
                             > 0
                         {
-                            panic!("`ignore` attribute must not be blank");
+                            panic!("`{}` attribute must not be blank", IGNORE);
                         };
                         mapper_entry.ignore = ignore_arr;
                     }
@@ -205,6 +236,71 @@ impl MapperEntry {
                     let tuple: MapTuple = (str_val.unwrap(), flag.unwrap());
                     vec_tuple.push(tuple);
                 }
+                //println!("");
+            }
+        }
+
+        return vec_tuple;
+    }
+
+    fn parse_array_of_new_fields(expr_arr: &syn::ExprArray) -> Vec<NewField> {
+        let mut vec_tuple: Vec<NewField> = Vec::new();
+
+        for elem in expr_arr.elems.iter() {
+            if let Expr::Tuple(el_exp) = elem {
+                //println!("{} content  is a Tuple",keyname);
+
+                let mut prev_value: Option<String> = None;
+
+                for (position, content_expr) in el_exp.elems.iter().enumerate() {
+                    if let Expr::Lit(content_lit) = content_expr {
+                        if let Lit::Str(content) = &content_lit.lit {
+                            //print!("valueStr={}",content.value());
+                            if let Some(str_val) =
+                                utils::remove_white_space(&content.value()).into()
+                            {
+                                //Read  each 2 element and add it to the vec_tuple. We split elements by 2
+                                match position % 2 {
+                                    0 => {
+                                        prev_value = Some(str_val);
+                                    }
+                                    _ => {
+                                        // current position is not an even number and is considered a 2nd recurrint element in the series
+                                        if prev_value.is_some() {
+                                            let field_decl = prev_value.clone().unwrap();
+                                            //Parse fieldname and type
+                                            if let Some(colon_position) = field_decl.find(":") {
+                                                if colon_position == 0 {
+                                                    panic!("`:` cannot be the first character. Need to specify new fieldname for struct");
+                                                }
+                                                if colon_position == field_decl.len() - 1 {
+                                                    panic!("Need to specify a type for the fieldname after `:`");
+                                                }
+
+                                                let field_name =
+                                                    &field_decl.as_str()[..colon_position];
+                                                let field_type =
+                                                    &field_decl.as_str()[colon_position + 1..];
+
+                                                vec_tuple.push(NewField::new(
+                                                    field_name,
+                                                    field_type,
+                                                    str_val.as_str(),
+                                                ));
+                                                //reset prev value
+                                                prev_value = None;
+                                                continue;
+                                            }
+
+                                            panic!("Missing `:` character for field declaration");
+                                        }
+                                    }
+                                }
+                            } //Some(str_val)
+                        } //Lit::Str
+                    } //Expr::Lit
+                }
+
                 //println!("");
             }
         }

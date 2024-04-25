@@ -1,5 +1,6 @@
 extern crate proc_macro;
 extern crate quote;
+
 #[macro_use]
 #[cfg(test)]
 extern crate derive_builder;
@@ -8,6 +9,8 @@ mod entry_validator;
 mod mapper_entry;
 mod struct_entry;
 mod utils;
+
+//re-export dependencies
 
 use entry_validator::validate_entry_data;
 use mapper_entry::MapperEntry;
@@ -41,6 +44,9 @@ pub fn dto_mapper_proc_macro(input: TokenStream) -> TokenStream {
     }
 
     let dtos = dto_builder::generate_dto_stream(&mapper_entries, &struct_entry);
+    let dto_stream = quote! {
+        #(#dtos)*
+    };
     //let s= dto_builder::generate_dto_impl(& mapper_entries, & struct_entry);
     let dto_impls = dto_builder::generate_impl(&mapper_entries, &struct_entry, true);
 
@@ -48,7 +54,7 @@ pub fn dto_mapper_proc_macro(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         //DTOs generated
-        #(#dtos)*
+        #dto_stream
 
         #(#dto_impls)*
 
