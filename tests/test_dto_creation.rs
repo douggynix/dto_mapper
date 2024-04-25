@@ -126,10 +126,11 @@ mod test_dto_creation {
             ..User::default()
         };
 
-        println!("{:?}", user);
-        let custom_dto: CustomDto = user.into();
-        println!("{:?}", custom_dto);
+        let custom_dto: CustomDto = user.clone().into();
 
-        //char::try_from(32);
+        assert_eq!(
+            custom_dto.name,
+            format!("{} {}", user.firstname, user.lastname)
+        );
     }
 }
