@@ -119,11 +119,12 @@ fn build_into_fields(
 
   // let selected_fields =
   //   get_selected_fields(&st_entry, &ignore_fields, &map_fields);
-  let selected_fields = if mp_entry.exactly {
-    get_all_fields(&st_entry)
-  } else {
-    get_selected_fields(&st_entry, &ignore_fields, &map_fields)
-  };
+  let selected_fields =
+    if mp_entry.exactly && map_fields.len() == 0 && ignore_fields.len() == 0 {
+      get_all_fields(&st_entry)
+    } else {
+      get_selected_fields(&st_entry, &ignore_fields, &map_fields)
+    };
 
   selected_fields
     .iter()
@@ -173,11 +174,12 @@ fn build_fields(
   // Let us retrieve the ignore fields
   let ignore_fields = get_ignore_fields(mp_entry);
 
-  let selected_fields = if mp_entry.exactly {
-    get_all_fields(&st_entry)
-  } else {
-    get_selected_fields(&st_entry, &ignore_fields, &map_fields)
-  };
+  let selected_fields =
+    if mp_entry.exactly && map_fields.len() == 0 && ignore_fields.len() == 0 {
+      get_all_fields(&st_entry)
+    } else {
+      get_selected_fields(&st_entry, &ignore_fields, &map_fields)
+    };
 
   let tk_stream_iterator = selected_fields.iter().map(|field| {
     let mut name = format!("{}", field.field_name.to_string());

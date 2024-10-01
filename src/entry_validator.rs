@@ -40,9 +40,9 @@ fn validate_map_ignore(
   let invalid_entries: Vec<String> = mp_entries
     .iter()
     .filter(|mp_entry| {
-      mp_entry.map.len() == 0
+      return mp_entry.map.len() == 0
         && mp_entry.ignore.len() == 0
-        && mp_entry.exactly == false
+        && mp_entry.exactly == false;
     })
     .map(|mp_entry| mp_entry.dto.to_string())
     .collect();
