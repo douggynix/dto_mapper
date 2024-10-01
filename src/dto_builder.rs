@@ -73,7 +73,6 @@ pub fn generate_impl(
       if is_dto {
         //convert struct into dto
         impl_stream = quote! {
-
             impl Into<#dto> for #struct_name{
                 fn into(self) -> #dto {
                     #dto {
@@ -81,12 +80,10 @@ pub fn generate_impl(
                     }
                 }
             }
-
         };
       } else {
         //convert dto into original struct
         impl_stream = quote! {
-
             impl Into<#struct_name> for #dto{
                 fn into(self) -> #struct_name {
                     #struct_name {
@@ -95,7 +92,6 @@ pub fn generate_impl(
                     }
                 }
             }
-
         };
       }
       //println!("#######dto_impls = {}",impl_stream.to_string());
