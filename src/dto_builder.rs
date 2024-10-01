@@ -3,6 +3,7 @@ use std::{
   mem,
 };
 
+use ::syn::parse_str;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Path, PathSegment};
@@ -215,11 +216,11 @@ fn build_new_fields_token(mp_entry: &MapperEntry) -> Vec<TokenStream> {
     .iter()
     .map(|new_field| {
       let new_field_ident = format_ident!("{}", new_field.field_name.as_str());
-      let field_type_ident = format_ident!("{}", new_field.field_type.as_str());
-      //field_type_ident.span().
-      //quote_spanned!{field_type_ident.span() => field_type_ident.}
-      let expr_path = Path::from(PathSegment::from(field_type_ident.clone()));
-      quote! { pub #new_field_ident: #expr_path }
+      let field_type = &new_field.field_type;
+      // Parse the field_type string into a syn::Type
+      let type_tokens: syn::Type = parse_str(field_type)
+        .unwrap_or_else(|_| panic!("Failed to parse type: {}", field_type));
+      quote! { pub #new_field_ident: #type_tokens }
     })
     .collect()
 }
@@ -233,7 +234,10 @@ fn build_init_new_fields_token(mp_entry: &MapperEntry) -> Vec<TokenStream> {
       let expr = new_field.expression_value.clone();
 
       let token = quote! { #name: unstringify!(#expr) };
-      //println!("TokenStream {}",token.to_string());
+      println!(
+        "name:{name} | expr: {expr} | TokenStream {}",
+        token.to_string()
+      );
       token
     })
     .collect()
