@@ -14,8 +14,6 @@ pub struct FieldEntry {
   pub field_name: String,
   pub field_type: Type,
   pub is_optional: bool,
-  pub expression_value: String,
-  pub attributes: Vec<String>,
 }
 
 impl StructEntry {

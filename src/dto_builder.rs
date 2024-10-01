@@ -6,7 +6,6 @@ use std::{
 use ::syn::parse_str;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::{Path, PathSegment};
 
 use crate::{
   mapper_entry::{MapValue, MapperEntry},
@@ -70,6 +69,7 @@ pub fn generate_impl(
       let impl_stream: TokenStream;
       let struct_name = format_ident!("{}", &struct_entry.name.as_str());
       let dto = format_ident!("{}", mp_entry.dto.as_str());
+
       if is_dto {
         //convert struct into dto
         impl_stream = quote! {
@@ -200,7 +200,7 @@ fn build_fields(
 
   let mut struct_fields = tk_stream_iterator.collect::<Vec<TokenStream>>();
   let new_field_token = build_new_fields_token(&mp_entry);
-  //println!("New Fields token = {:?}",new_field_token);
+  eprintln!("New Fields token = {:#?}", new_field_token);
   struct_fields.extend(new_field_token);
 
   struct_fields
@@ -212,11 +212,21 @@ fn build_new_fields_token(mp_entry: &MapperEntry) -> Vec<TokenStream> {
     .iter()
     .map(|new_field| {
       let new_field_ident = format_ident!("{}", new_field.field_name.as_str());
-      let field_type = &new_field.field_type;
-      // Parse the field_type string into a syn::Type
-      let type_tokens: syn::Type = parse_str(field_type)
-        .unwrap_or_else(|_| panic!("Failed to parse type: {}", field_type));
-      quote! { pub #new_field_ident: #type_tokens }
+      let field_type: syn::Type = parse_str(&new_field.field_type)
+        .unwrap_or_else(|_| {
+          panic!("Failed to parse type: {}", new_field.field_type)
+        });
+
+      let attributes: Vec<TokenStream> = new_field
+        .attributes
+        .iter()
+        .map(|attr| parse_str(attr).unwrap())
+        .collect();
+
+      quote! {
+          #(#attributes)*
+          pub #new_field_ident: #field_type
+      }
     })
     .collect()
 }
@@ -227,14 +237,13 @@ fn build_init_new_fields_token(mp_entry: &MapperEntry) -> Vec<TokenStream> {
     .iter()
     .map(|new_field| {
       let name = format_ident!("{}", new_field.field_name.as_str());
-      let expr = new_field.expression_value.clone();
+      let expr = &new_field.expression_value;
 
-      let token = quote! { #name: unstringify!(#expr) };
-      println!(
-        "name:{name} | expr: {expr} | TokenStream {}",
-        token.to_string()
-      );
-      token
+      if !new_field.is_optional {
+        quote! { #name: unstringify!(#expr) }
+      } else {
+        quote! { #name: Some(unstringify!(#expr)) }
+      }
     })
     .collect()
 }

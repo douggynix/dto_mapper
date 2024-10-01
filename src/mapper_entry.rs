@@ -1,3 +1,4 @@
+use ::quote::quote;
 use syn::{
   punctuated::Punctuated, spanned::Spanned, Attribute, Expr, ExprArray,
   ExprLit, ExprTuple, Lit, Meta, Token,
@@ -33,14 +34,24 @@ pub struct NewField {
   pub field_type: String,
   //init_value is used compute this field value in the DTO during conversion with into()
   pub expression_value: String,
+  pub is_optional: bool,
+  pub attributes: Vec<String>,
 }
 
 impl NewField {
-  pub fn new(name: &str, r#type: &str, init_expression: &str) -> Self {
+  pub fn new(
+    name: &str,
+    r#type: &str,
+    init_expression: &str,
+    attr: Option<Vec<String>>,
+    is_optional: bool,
+  ) -> Self {
     Self {
       field_name: name.to_string(),
       field_type: r#type.to_string(),
       expression_value: init_expression.to_string(),
+      attributes: attr.unwrap_or(vec![]),
+      is_optional,
     }
   }
 }
@@ -302,46 +313,67 @@ impl MapperEntry {
     return vec_tuple;
   }
 
-  fn process_new_fields(mut vec_tuple: &mut Vec<NewField>, elem: &Expr) {
-    if let Expr::Tuple(el_exp) = elem {
-      //println!("{} content  is a Tuple",keyname);
+  fn process_new_fields(vec_tuple: &mut Vec<NewField>, elem: &Expr) {
+    if let Expr::Tuple(tuple_expr) = elem {
+      for item in tuple_expr.elems.iter() {
+        if let Expr::Tuple(inner_tuple) = item {
+          if inner_tuple.elems.len() != 4 {
+            panic!("Each new_field entry should have 4 elements: field declaration, expression, required flag, and attributes array");
+          }
 
-      let mut prev_value: Option<String> = None;
+          let mut field_decl = String::new();
+          let mut expression = String::new();
+          let mut required = false;
+          let mut attributes = Vec::new();
 
-      for (position, content_expr) in el_exp.elems.iter().enumerate() {
-        if let Expr::Lit(content_lit) = content_expr {
-          if let Lit::Str(content) = &content_lit.lit {
-            //print!("valueStr={}",content.value());
-            if let Some(str_val) =
-              utils::remove_white_space(&content.value()).into()
-            {
-              //Read  each 2 element and add it to the vec_tuple. We split elements by 2
-              match position % 2 {
-                0 => {
-                  prev_value = Some(str_val);
+          for (i, e) in inner_tuple.elems.iter().enumerate() {
+            match i {
+              0 => {
+                if let Expr::Lit(ExprLit {
+                  lit: Lit::Str(s), ..
+                }) = e
+                {
+                  field_decl = s.value();
                 }
-                _ => {
-                  // current position is not an even number and is considered a 2nd recurrint element in the series
-                  if prev_value.is_some() {
-                    let field_decl = prev_value.clone().unwrap();
-                    //Parse fieldname and type
-                    if let Some(colon_position) = field_decl.find(":") {
-                      Self::insert_next_field_value(
-                        &mut vec_tuple,
-                        str_val,
-                        &field_decl,
-                        &colon_position,
-                      );
-                      //reset prev value
-                      prev_value = None;
-                      continue;
+              }
+              1 => {
+                expression = quote!(#e).to_string();
+              }
+              2 => {
+                if let Expr::Lit(ExprLit {
+                  lit: Lit::Bool(b), ..
+                }) = e
+                {
+                  required = b.value();
+                }
+              }
+              3 => {
+                if let Expr::Array(attr_array) = e {
+                  for attr in attr_array.elems.iter() {
+                    if let Expr::Lit(ExprLit {
+                      lit: Lit::Str(s), ..
+                    }) = attr
+                    {
+                      attributes.push(s.value());
                     }
-
-                    panic!("Missing `:` character for field declaration");
                   }
                 }
               }
+              _ => {}
             }
+          }
+
+          if let Some(colon_position) = field_decl.find(':') {
+            Self::insert_next_field_value(
+              vec_tuple,
+              expression,
+              &field_decl,
+              &colon_position,
+              Some(attributes),
+              required,
+            );
+          } else {
+            panic!("Missing `:` character for field declaration");
           }
         }
       }
@@ -353,6 +385,8 @@ impl MapperEntry {
     str_val: String,
     field_decl: &String,
     colon_position: &usize,
+    attributes: Option<Vec<String>>,
+    required: bool,
   ) {
     if *colon_position == 0 {
       panic!("`:` cannot be the first character. Need to specify new fieldname for struct");
@@ -364,7 +398,13 @@ impl MapperEntry {
     let field_name = &field_decl.as_str()[..*colon_position];
     let field_type = &field_decl.as_str()[*colon_position + 1..];
 
-    vec_tuple.push(NewField::new(field_name, field_type, str_val.as_str()));
+    vec_tuple.push(NewField::new(
+      field_name,
+      field_type,
+      str_val.as_str(),
+      attributes,
+      required,
+    ));
   }
 
   fn parse_array_of_string(expr_arr: &syn::ExprArray) -> Vec<String> {
