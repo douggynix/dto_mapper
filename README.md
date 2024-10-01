@@ -1,13 +1,15 @@
+# Thanks to original [author](https://github.com/douggynix/dto_mapper)
+# Modified [as needed](https://github.com/fatihaziz/dto_mapper_rust)
 # dto_mapper
 This is a library to create dynamic DTOs for rust based project. It has the same purpose with the known Java DTO Mapper Library called Model Java used mainly in Java SpringBoot applications.
 
 DTO stands for Data Transfer Object. It is a Software Design pattern that involves mapping a parent object to a new one by reusing some of its properties into the newly created one.
-For example, if one application is manipulating sensitive data such as credit card information, passwords, or any other high sensitive information that shouldn't be sent(serialized) over the network or 
+For example, if one application is manipulating sensitive data such as credit card information, passwords, or any other high sensitive information that shouldn't be sent(serialized) over the network or
 displayed to the user in any form. So, applications need a way to map this Entity to a new one by removing the properties or fields they wouldn't want to expose to a user in JSON or any other format.
 
 This library makes it handy. It helps annotate a structure with special attributes to extract fields to compose new structure objects for re-use. This library is based upon the **Syn** Library
 and the power of macro derive attributes embedded in rust. The dtos are generated during compile time. There is no overhead during runtime for this as the final binary will contain the dto structure
-resulted after buil time. I would recommend using Visual Studio code with rust analyzer plugin installed for auto-completion and a nicer developer experience with preview of field names when hovering 
+resulted after buil time. I would recommend using Visual Studio code with rust analyzer plugin installed for auto-completion and a nicer developer experience with preview of field names when hovering
 over a dto structure.
 
 # Summary
@@ -29,7 +31,7 @@ This is where DTO Mapper Library comes handy.
 
 # Installation
 **_dto_mapper_** library depends on **_unstringify_** and **_derive_builder_** which implements builder pattern for dto objects resulted from the dto mappers.
-By default, it generate builder for the dtos. 
+By default, it generate builder for the dtos.
 You can use this instruction to install the latest version of **dto_mapper** library to your project
 ```shell
 cargo add derive_builder
@@ -71,8 +73,10 @@ It takes only those lines below to get this work done. And the conversion are be
     #[derive(DtoMapper,Default,Clone)]
     #[mapper( dto="LoginDto"  , map=[ ("username:login",true) , ("password",true)] , derive=(Debug, Clone, PartialEq) )]
     #[mapper( dto="ProfileDto" , ignore=["password"]  , derive=(Debug, Clone, PartialEq) )]
+    // this will has 1:1 struct mapping
+    #[mapper( dto="LoginDtoExact"  , exactly=true , derive=(Debug, Clone, PartialEq) )]
     //no_builder=true will not create default builder for that dto
-    #[mapper( dto="PersonDto" , no_builder=true,  map=[ ("firstname",true), ("lastname",true), ("email",false) ]  )] 
+    #[mapper( dto="PersonDto" , no_builder=true,  map=[ ("firstname",true), ("lastname",true), ("email",false) ]  )]
     #[mapper( dto="CustomDto" , no_builder=true , map=[ ("email",false) ] , derive=(Debug, Clone) ,
         new_fields=[( "name: String", "concat_str( self.firstname.as_str(), self.lastname.as_str() )" )]
     )]
@@ -199,7 +203,7 @@ If not it will result in error in your IDE. It is a must to to derive or impleme
 struct SourceStruct{ }
 ```
 - ## `#[mapper()]` attributes
-  **mapper** attributes can be repeated for as many dtos needed to be created. Each mapper represents a concrent dto struct.  
+  **mapper** attributes can be repeated for as many dtos needed to be created. Each mapper represents a concrent dto struct.
   - **Required fields** will result in build errors if not present.
     - **dto** : name for the dto that will result into a struct with the same name. Example : `dto="MyDto"` will result into a struct named **MyDto**.
       dto names must be unique. Otherwise, it will result into build errors.
@@ -215,7 +219,6 @@ struct SourceStruct{ }
     - **no_builder**: a boolean flag to turn on or off builders for the dto. Default value is **_false_**. If the Dto name is "MyDto" , the builder will create a struct named "MyDtoBuilder" that can be used to build "MyDto" struct.
     - **new_fields** : an array of declaration of new field names to include to the resulted dto structure. `new_fields=[("fieldname:type"), ("initialize_expression") )]`.
       `fieldname:type` will create a new field with the `fieldname` specified and the `type`. It is not mandatory to rename. you can have `map=[("fieldname",true)]`
-      `initialize_expression` is used an initialize value or expression to use when converting the original structure to the dto. 
+      `initialize_expression` is used an initialize value or expression to use when converting the original structure to the dto.
       For instance `new_fields=[("name:String"), ("concat_str(self.firstname,self.lastname)") )]` will create a new field in the dto called `name` which will be initialized with the concatenation of the original struct `firstname` and `lastname` fields. See the example above.
       **I would strongly suggest to use function  as `initialize_expression` for more complex scenarios in case parsing is failing when writing complex inline expression directly. This will reduce code complexity!!**
-      
