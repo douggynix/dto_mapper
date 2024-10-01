@@ -1,20 +1,20 @@
 [package]
-name = "dto_mapper"
-version = "0.2.0"
-edition = "2021"
 authors = ["James Douglass Lefruit"]
-description = "A library to create dynamic DTOs (Data Transfer Object) from a structure"
-repository = "https://github.com/douggynix/dto_mapper"
-homepage = "https://github.com/douggynix/dto_mapper"
-documentation = "https://github.com/douggynix/dto_mapper/tree/0.2.0"
-readme = "README.md"
-license = "Apache-2.0"
 categories = ["data-structures", "web-programming", "rust-patterns"]
-keywords = ["dto", "dto-mapper", "data-transfer-object", "dto-pattern", "model-mapper"]
+description = "A library to create dynamic DTOs (Data Transfer Object) from a structure"
+documentation = "https://github.com/douggynix/dto_mapper/tree/0.2.0"
+edition = "2021"
 exclude = [
-    ".github/workflows/rust.yml",
-    ".vscode/settings.json",
+  ".github/workflows/rust.yml",
+  ".vscode/settings.json",
 ]
+homepage = "https://github.com/douggynix/dto_mapper"
+keywords = ["dto", "dto-mapper", "data-transfer-object", "dto-pattern", "model-mapper"]
+license = "Apache-2.0"
+name = "dto_mapper"
+readme = "README.md"
+repository = "https://github.com/douggynix/dto_mapper"
+version = "0.2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 proc-macro = true
@@ -23,9 +23,8 @@ proc-macro = true
 derive_builder = "0.20.0"
 proc-macro2 = "1.0.81"
 quote = "1.0.36"
-syn = { version = "2.0.60", features = ["full"] }
+syn = {version = "2", features = ["full"]}
 unstringify = "0.1.4"
 
 [dev-dependencies]
 derive_builder = "0.20.0"
-
