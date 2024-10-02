@@ -1,10 +1,8 @@
-use ::quote::quote;
 use syn::{
   punctuated::Punctuated, spanned::Spanned, Attribute, Expr, ExprArray,
   ExprLit, ExprTuple, Lit, Meta, Token,
 };
 
-use crate::struct_entry::is_type_option;
 use crate::utils;
 
 pub type MapTuple = (String, bool);
@@ -35,7 +33,7 @@ pub struct NewField {
   pub field_type: String,
   //init_value is used compute this field value in the DTO during conversion with into()
   pub expression_value: String,
-  pub is_optional: bool,
+  pub required: Option<bool>,
   pub attributes: Vec<String>,
 }
 
@@ -45,14 +43,14 @@ impl NewField {
     r#type: &str,
     init_expression: &str,
     attr: Option<Vec<String>>,
-    is_optional: bool,
+    required: Option<bool>,
   ) -> Self {
     Self {
       field_name: name.to_string(),
       field_type: r#type.to_string(),
       expression_value: init_expression.to_string(),
       attributes: attr.unwrap_or(vec![]),
-      is_optional,
+      required,
     }
   }
 }
@@ -317,7 +315,7 @@ impl MapperEntry {
   fn process_new_fields(mut vec_tuple: &mut Vec<NewField>, elem: &Expr) {
     if let Expr::Tuple(el_exp) = elem {
       let mut field_data: [Option<String>; 2] = [None, None];
-      let mut is_optional: Option<bool> = None;
+      let mut is_required: Option<bool> = None;
       let mut attributes: Vec<String> = Vec::new();
       let total_passed_args = el_exp.elems.len();
 
@@ -348,7 +346,7 @@ impl MapperEntry {
             if let Expr::Lit(content_lit) = content_expr {
               if let Lit::Bool(bool_val) = &content_lit.lit {
                 // eprintln!("is_optional={}", bool_val.value);
-                is_optional = Some(bool_val.value);
+                is_required = Some(bool_val.value);
               }
             }
           }
@@ -378,7 +376,7 @@ impl MapperEntry {
                 } else {
                   Some(attributes.clone())
                 },
-                is_optional.unwrap_or(false),
+                is_required,
               );
             } else {
               panic!("Missing `:` character for field declaration");
@@ -386,7 +384,7 @@ impl MapperEntry {
           }
           // Reset for next field
           field_data = [None, None];
-          is_optional = None;
+          is_required = None;
           attributes.clear();
         }
       }
@@ -401,7 +399,7 @@ impl MapperEntry {
     field_decl: &String,
     colon_position: &usize,
     attributes: Option<Vec<String>>,
-    required: bool,
+    required: Option<bool>,
   ) {
     if *colon_position == 0 {
       panic!("`:` cannot be the first character. Need to specify new fieldname for struct");

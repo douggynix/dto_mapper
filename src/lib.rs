@@ -1,6 +1,7 @@
 extern crate proc_macro;
 extern crate quote;
 
+#[allow(unused_imports)]
 #[macro_use]
 #[cfg(test)]
 extern crate derive_builder;

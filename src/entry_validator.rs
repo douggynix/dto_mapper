@@ -6,12 +6,14 @@ use std::{
 use crate::{mapper_entry::MapperEntry, struct_entry::StructEntry};
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum FieldError {
   DupField(String),
   MissingField(String),
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum ValidationError {
   MapperEntryError(Vec<FieldError>),
   StructEntryError(Vec<FieldError>),
