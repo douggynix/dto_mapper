@@ -29,22 +29,7 @@ pub fn generate_dto_stream(
         ident
       })
       .collect();
-    // let macro_attr: Vec<_> = mapper_entry
-    //   .macro_attr
-    //   .iter()
-    //   .filter_map(|attr_str| {
-    //     if let Ok(meta) = syn::parse_str::<syn::Meta>(attr_str) {
-    //       Some(syn::Attribute {
-    //         pound_token: syn::Token![#](proc_macro2::Span::call_site()),
-    //         style: syn::AttrStyle::Outer,
-    //         bracket_token: syn::token::Bracket(proc_macro2::Span::call_site()),
-    //         meta,
-    //       })
-    //     } else {
-    //       None
-    //     }
-    //   })
-    //   .collect();
+
     let macro_attr: Vec<_> = mapper_entry
       .macro_attr
       .iter()
