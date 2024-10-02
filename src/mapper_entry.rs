@@ -314,69 +314,12 @@ impl MapperEntry {
     return vec_tuple;
   }
 
-  // fn process_new_fields(mut vec_tuple: &mut Vec<NewField>, elem: &Expr) {
-  //   if let Expr::Tuple(el_exp) = elem {
-  //     //println!("{} content  is a Tuple",keyname);
-
-  //     let mut prev_value: Option<String> = None;
-  //     eprintln!("elem: {:#?}", elem);
-
-  //     for (position, content_expr) in el_exp.elems.iter().enumerate() {
-  //       if let Expr::Lit(content_lit) = content_expr {
-  //         if let Lit::Str(content) = &content_lit.lit {
-  //           //print!("valueStr={}",content.value());
-  //           if let Some(str_val) =
-  //             utils::remove_white_space(&content.value()).into()
-  //           {
-  //             //Read  each 2 element and add it to the vec_tuple. We split elements by 2
-  //             match position % 2 {
-  //               0 => {
-  //                 prev_value = Some(str_val);
-  //               }
-  //               _ => {
-  //                 // current position is not an even number and is considered a 2nd recurrint element in the series
-  //                 if prev_value.is_some() {
-  //                   let field_decl = prev_value.clone().unwrap();
-  //                   //Parse fieldname and type
-  //                   if let Some(colon_position) = field_decl.find(":") {
-  //                     // let has_option = is_type_option();
-
-  //                     eprintln!("===========>");
-  //                     eprintln!("{}", str_val);
-  //                     eprintln!("{}", field_decl);
-  //                     eprintln!("{}", colon_position);
-  //                     eprintln!("===========>");
-
-  //                     Self::insert_next_field_value(
-  //                       &mut vec_tuple,
-  //                       str_val,
-  //                       &field_decl,
-  //                       &colon_position,
-  //                       None,
-  //                       false,
-  //                     );
-  //                     //reset prev value
-  //                     prev_value = None;
-  //                     continue;
-  //                   }
-
-  //                   panic!("Missing `:` character for field declaration");
-  //                 }
-  //               }
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-
   fn process_new_fields(mut vec_tuple: &mut Vec<NewField>, elem: &Expr) {
     if let Expr::Tuple(el_exp) = elem {
       let mut field_data: [Option<String>; 2] = [None, None];
       let mut is_optional: Option<bool> = None;
       let mut attributes: Vec<String> = Vec::new();
-      let mut total_passed_args = el_exp.elems.len();
+      let total_passed_args = el_exp.elems.len();
 
       // eprintln!("===========>");
       // eprintln!("elem= {:#?}", el_exp.elems);
