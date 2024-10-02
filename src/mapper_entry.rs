@@ -13,8 +13,9 @@ pub struct MapperEntry {
   pub ignore: Vec<String>,
   pub derive: Vec<String>,
   pub no_builder: bool,
-  pub exactly: bool,
   pub new_fields: Vec<NewField>,
+  pub exactly: bool,
+  pub macro_attr: Vec<String>,
 }
 
 //DataStructure for the type of mapper values found in each entry
@@ -92,8 +93,9 @@ const IGNORE: &'static str = "ignore";
 //const ALL_FIELD: &'static str = "include_all";
 const DERIVE: &'static str = "derive";
 const WITHOUT_BUILDER: &'static str = "no_builder";
-const EXACTLY: &'static str = "exactly";
 const NEW_FIELDS: &'static str = "new_fields";
+const EXACTLY: &'static str = "exactly";
+const MACRO_ATTR: &'static str = "macro_attr";
 
 impl MapperEntry {
   pub fn build(attr: &Attribute) -> syn::Result<Self> {
@@ -139,6 +141,9 @@ impl MapperEntry {
 
           if keyname.eq_ignore_ascii_case(NEW_FIELDS) {
             Self::parse_new_fields_attribute(&mut mapper_entry, expr_arr);
+          }
+          if keyname.eq_ignore_ascii_case(&MACRO_ATTR) {
+            Self::parse_macro_attr_attribute(&mut mapper_entry, expr_arr);
           }
 
           if keyname.eq_ignore_ascii_case(IGNORE) {
@@ -254,6 +259,14 @@ impl MapperEntry {
     };
   }
 
+  fn parse_macro_attr_attribute(
+    mapper_entry: &mut MapperEntry,
+    expr_arr: &ExprArray,
+  ) {
+    mapper_entry.macro_attr = Self::parse_array_of_macro_attr(expr_arr);
+    //println!("{:?}",mapper_entry.new_fields);
+  }
+
   fn parse_map_attribute(mapper_entry: &mut MapperEntry, expr_arr: &ExprArray) {
     let map_tuples = Self::parse_array_of_tuple(expr_arr);
     //println!("{}={:?}",keyname,map_tuple);
@@ -267,6 +280,27 @@ impl MapperEntry {
     {
       panic!("`{}` attribute must not be blank", MAP);
     };
+  }
+
+  fn parse_array_of_macro_attr(expr_arr: &syn::ExprArray) -> Vec<String> {
+    let mut vec_tuple: Vec<String> = Vec::new();
+
+    for elem in expr_arr.elems.iter() {
+      Self::process_macro_attr(&mut vec_tuple, elem);
+    }
+
+    return vec_tuple;
+  }
+  fn process_macro_attr(vec_array: &mut Vec<String>, elem: &Expr) {
+    if let Expr::Lit(content_lit) = elem {
+      // eprintln!("content_lit={:?}", content_lit);
+      if let Lit::Str(content) = &content_lit.lit {
+        vec_array.push(utils::remove_white_space(&content.value()).into());
+      }
+    }
+    // eprintln!("================>");
+    // eprintln!("vec_arr={:#?}", vec_array);
+    // eprintln!("elem={:#?}", elem);
   }
 
   fn parse_array_of_tuple(expr_arr: &syn::ExprArray) -> Vec<MapTuple> {
