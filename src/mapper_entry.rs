@@ -4,6 +4,7 @@ use syn::{
   ExprLit, ExprTuple, Lit, Meta, Token,
 };
 
+use crate::struct_entry::is_type_option;
 use crate::utils;
 
 pub type MapTuple = (String, bool);
@@ -313,70 +314,141 @@ impl MapperEntry {
     return vec_tuple;
   }
 
-  fn process_new_fields(vec_tuple: &mut Vec<NewField>, elem: &Expr) {
-    if let Expr::Tuple(tuple_expr) = elem {
-      for item in tuple_expr.elems.iter() {
-        if let Expr::Tuple(inner_tuple) = item {
-          if inner_tuple.elems.len() != 4 {
-            panic!("Each new_field entry should have 4 elements: field declaration, expression, required flag, and attributes array");
-          }
+  // fn process_new_fields(mut vec_tuple: &mut Vec<NewField>, elem: &Expr) {
+  //   if let Expr::Tuple(el_exp) = elem {
+  //     //println!("{} content  is a Tuple",keyname);
 
-          let mut field_decl = String::new();
-          let mut expression = String::new();
-          let mut required = false;
-          let mut attributes = Vec::new();
+  //     let mut prev_value: Option<String> = None;
+  //     eprintln!("elem: {:#?}", elem);
 
-          for (i, e) in inner_tuple.elems.iter().enumerate() {
-            match i {
-              0 => {
-                if let Expr::Lit(ExprLit {
-                  lit: Lit::Str(s), ..
-                }) = e
+  //     for (position, content_expr) in el_exp.elems.iter().enumerate() {
+  //       if let Expr::Lit(content_lit) = content_expr {
+  //         if let Lit::Str(content) = &content_lit.lit {
+  //           //print!("valueStr={}",content.value());
+  //           if let Some(str_val) =
+  //             utils::remove_white_space(&content.value()).into()
+  //           {
+  //             //Read  each 2 element and add it to the vec_tuple. We split elements by 2
+  //             match position % 2 {
+  //               0 => {
+  //                 prev_value = Some(str_val);
+  //               }
+  //               _ => {
+  //                 // current position is not an even number and is considered a 2nd recurrint element in the series
+  //                 if prev_value.is_some() {
+  //                   let field_decl = prev_value.clone().unwrap();
+  //                   //Parse fieldname and type
+  //                   if let Some(colon_position) = field_decl.find(":") {
+  //                     // let has_option = is_type_option();
+
+  //                     eprintln!("===========>");
+  //                     eprintln!("{}", str_val);
+  //                     eprintln!("{}", field_decl);
+  //                     eprintln!("{}", colon_position);
+  //                     eprintln!("===========>");
+
+  //                     Self::insert_next_field_value(
+  //                       &mut vec_tuple,
+  //                       str_val,
+  //                       &field_decl,
+  //                       &colon_position,
+  //                       None,
+  //                       false,
+  //                     );
+  //                     //reset prev value
+  //                     prev_value = None;
+  //                     continue;
+  //                   }
+
+  //                   panic!("Missing `:` character for field declaration");
+  //                 }
+  //               }
+  //             }
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+
+  fn process_new_fields(mut vec_tuple: &mut Vec<NewField>, elem: &Expr) {
+    if let Expr::Tuple(el_exp) = elem {
+      let mut field_data: [Option<String>; 2] = [None, None];
+      let mut is_optional: Option<bool> = None;
+      let mut attributes: Vec<String> = Vec::new();
+      let mut total_passed_args = el_exp.elems.len();
+
+      // eprintln!("===========>");
+      // eprintln!("elem= {:#?}", el_exp.elems);
+      // eprintln!("attrs= {:#?}", el_exp.attrs);
+      // eprintln!("vec_tuple= {:#?}", vec_tuple);
+
+      for (position, content_expr) in el_exp.elems.iter().enumerate() {
+        // eprintln!("content_expr={:#?}", content_expr);
+        // eprintln!("position={}", position);
+        match position % 4 {
+          0 | 1 => {
+            // Field name or value
+            if let Expr::Lit(content_lit) = content_expr {
+              if let Lit::Str(content) = &content_lit.lit {
+                if let Some(str_val) =
+                  utils::remove_white_space(&content.value()).into()
                 {
-                  field_decl = s.value();
+                  // eprintln!("str_val={}", str_val);
+                  field_data[position % 2] = Some(str_val);
                 }
               }
-              1 => {
-                expression = quote!(#e).to_string();
-              }
-              2 => {
-                if let Expr::Lit(ExprLit {
-                  lit: Lit::Bool(b), ..
-                }) = e
-                {
-                  required = b.value();
-                }
-              }
-              3 => {
-                if let Expr::Array(attr_array) = e {
-                  for attr in attr_array.elems.iter() {
-                    if let Expr::Lit(ExprLit {
-                      lit: Lit::Str(s), ..
-                    }) = attr
-                    {
-                      attributes.push(s.value());
-                    }
-                  }
-                }
-              }
-              _ => {}
             }
           }
-
-          if let Some(colon_position) = field_decl.find(':') {
-            Self::insert_next_field_value(
-              vec_tuple,
-              expression,
-              &field_decl,
-              &colon_position,
-              Some(attributes),
-              required,
-            );
-          } else {
-            panic!("Missing `:` character for field declaration");
+          2 => {
+            // Boolean value (is_optional)
+            if let Expr::Lit(content_lit) = content_expr {
+              if let Lit::Bool(bool_val) = &content_lit.lit {
+                // eprintln!("is_optional={}", bool_val.value);
+                is_optional = Some(bool_val.value);
+              }
+            }
           }
+          3 => {
+            // Attributes array
+            attributes = extract_attributes(content_expr);
+            // eprintln!("attributes={:#?}", attributes);
+          }
+          _ => unreachable!(),
+        }
+
+        // Process the field when we have all provided arguments
+        if total_passed_args - 1 == position {
+          if let (Some(field_decl), Some(field_value)) =
+            (&field_data[0], &field_data[1])
+          {
+            if let Some(colon_position) = field_decl.find(":") {
+              // eprintln!("field_decl={}", field_decl);
+              // eprintln!("colon={}", colon_position);
+              Self::insert_next_field_value(
+                &mut vec_tuple,
+                field_value.clone(),
+                field_decl,
+                &colon_position,
+                if attributes.is_empty() {
+                  None
+                } else {
+                  Some(attributes.clone())
+                },
+                is_optional.unwrap_or(false),
+              );
+            } else {
+              panic!("Missing `:` character for field declaration");
+            }
+          }
+          // Reset for next field
+          field_data = [None, None];
+          is_optional = None;
+          attributes.clear();
         }
       }
+
+      // eprintln!("===========>");
     }
   }
 
@@ -419,5 +491,28 @@ impl MapperEntry {
       }
     }
     return vec_str;
+  }
+}
+
+// Helper to extract extra attrs
+fn extract_attributes(expr: &Expr) -> Vec<String> {
+  if let Expr::Array(array_expr) = expr {
+    array_expr
+      .elems
+      .iter()
+      .filter_map(|elem| {
+        if let Expr::Lit(lit_expr) = elem {
+          if let Lit::Str(str_lit) = &lit_expr.lit {
+            Some(str_lit.value().trim().to_string())
+          } else {
+            None
+          }
+        } else {
+          None
+        }
+      })
+      .collect()
+  } else {
+    Vec::new()
   }
 }

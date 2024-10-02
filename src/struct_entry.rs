@@ -56,7 +56,7 @@ impl StructEntry {
 //https://github.com/jonhoo/proc-macro-workshop/blob/master/builder/src/lib.rs
 //this code snippet is inspired from the builder workshop for syn library
 //This is to figure out if type is an option
-fn is_type_option(a_type: &Type) -> bool {
+pub fn is_type_option(a_type: &Type) -> bool {
   if let Type::Path(ref p) = a_type {
     if p.path.segments.len() > 0 && p.path.segments[0].ident == "Option" {
       return true;

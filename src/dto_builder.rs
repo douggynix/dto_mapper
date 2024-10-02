@@ -200,7 +200,7 @@ fn build_fields(
 
   let mut struct_fields = tk_stream_iterator.collect::<Vec<TokenStream>>();
   let new_field_token = build_new_fields_token(&mp_entry);
-  eprintln!("New Fields token = {:#?}", new_field_token);
+  // eprintln!("New Fields token = {:#?}", new_field_token);
   struct_fields.extend(new_field_token);
 
   struct_fields
