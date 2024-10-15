@@ -1,5 +1,3 @@
-# Thanks to original [author](https://github.com/douggynix/dto_mapper)
-# Modified [as needed](https://github.com/fatihaziz/dto_mapper_rust)
 # dto_mapper
 This is a library to create dynamic DTOs for rust based project. It has the same purpose with the known Java DTO Mapper Library called Model Java used mainly in Java SpringBoot applications.
 
