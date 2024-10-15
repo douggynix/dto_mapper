@@ -78,6 +78,18 @@ It takes only those lines below to get this work done. And the conversion are be
     #[mapper( dto="CustomDto" , no_builder=true , map=[ ("email",false) ] , derive=(Debug, Clone) ,
         new_fields=[( "name: String", "concat_str( self.firstname.as_str(), self.lastname.as_str() )" )]
     )]
+    #[mapper(
+        dto="CustomDtoWithAttribute" ,
+        no_builder=true ,
+        map=[ ("email",false) ],
+        derive=(Debug, Clone, Serialize, Deserialize),
+        new_fields=[(
+            "name: String",
+            "concat_str( self.firstname.as_str(), self.lastname.as_str() )",
+            ["#[serde(rename = \"renamed_name\")]"], // attribute of fields
+        )],
+        macro_attr=["serde(rename_all = \"UPPERCASE\")"] // atriibute of struct
+    )]
     struct User{
         username: String,
         password: String,

@@ -27,11 +27,10 @@ mod test_dto_creation {
     new_fields=[(
         "name: String",
         "concat_str( self.firstname.as_str(), self.lastname.as_str() )",
-        true,
         ["#[serde(rename = \"renamed_name\")]"],
     )],
     macro_attr=["serde(rename_all = \"UPPERCASE\")"]
-)]
+  )]
   struct User {
     username: String,
     password: String,

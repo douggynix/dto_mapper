@@ -14,7 +14,7 @@ fn concat_str(s1: &str, s2: &str) -> String {
 #[mapper( dto="ProfileDto" , ignore=["password"]  , derive=(Debug, Clone, PartialEq) )]
 #[mapper( dto="PersonDto" , no_builder=true , map=[ ("firstname",true), ("lastname",true), ("email",false) ]  )]
 #[mapper( dto="CustomDto" , no_builder=true , map=[ ("email",false) ] , derive=(Debug, Clone) ,
-new_fields=[( "name: String", "concat_str( self.firstname.as_str(), self.lastname.as_str() )" )]
+  new_fields=[( "name: String", "concat_str( self.firstname.as_str(), self.lastname.as_str() )" )]
 )]
 struct User {
   username: String,

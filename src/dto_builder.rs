@@ -260,23 +260,13 @@ fn build_init_new_fields_token(mp_entry: &MapperEntry) -> Vec<TokenStream> {
     .map(|new_field| {
       let name = format_ident!("{}", new_field.field_name.as_str());
       let expr = &new_field.expression_value;
-      let f_type = &new_field.field_type;
+      // let f_type = &new_field.field_type;
 
       // eprintln!("required = {:#?}", new_field.required);
       // eprintln!("expr = {:#?}", expr);
       // eprintln!("f_type = {:#?}", f_type);
 
-      // assuming the `required` attribute is NONE then it want to set required=`false` when there is type `Option` in it
-      if new_field.required.unwrap_or(false) && f_type.contains("Option") {
-          panic!("field name: `{}` attribute `required` must set to `false` when type is `Option`", name);
-      }
-
-      // otherwise since its already either has Option or its set required=`true` then its just use as its
-      if new_field.required.unwrap_or(true) || f_type.contains("Option") {
-        quote! { #name: unstringify!(#expr) }
-      } else {
-        quote! { #name: Some(unstringify!(#expr)) }
-      }
+      quote! { #name: unstringify!(#expr) }
     })
     .collect()
 }
