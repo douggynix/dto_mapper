@@ -28,3 +28,5 @@ unstringify = "0.1.4"
 
 [dev-dependencies]
 derive_builder = "0.20.0"
+serde = {version = "1", features = ["serde_derive", "derive"]}
+serde_json = {version = "1.0"}
