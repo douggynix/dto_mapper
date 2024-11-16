@@ -4,6 +4,7 @@ use syn::{
 };
 
 use crate::utils;
+use crate::utils::isblank;
 
 pub type MapTuple = (String, bool);
 #[derive(Debug, Default)]
@@ -239,6 +240,17 @@ impl MapperEntry {
     }
 
     fn parse_macro_attr_attribute(mapper_entry: &mut MapperEntry, expr_arr: &ExprArray) {
+        if mapper_entry
+            .macro_attr
+            .iter()
+            .find(|attr| isblank(attr))
+            .is_some()
+        {
+            panic!(
+                "`{}` attribute must not be empty. Remove it if it's not needed. {:?}",
+                MACRO_ATTR, mapper_entry.macro_attr
+            );
+        }
         mapper_entry.macro_attr = Self::parse_array_of_macro_attr(expr_arr);
         //println!("{:?}",mapper_entry.new_fields);
     }
@@ -365,16 +377,17 @@ impl MapperEntry {
                         if let Some(colon_position) = field_decl.find(":") {
                             // eprintln!("field_decl={}", field_decl);
                             // eprintln!("colon={}", colon_position);
+                            let new_field_attr = match attributes.is_empty() {
+                                true => None,
+                                false => Some(attributes.clone()),
+                            };
+
                             Self::insert_next_field_value(
                                 &mut vec_tuple,
                                 field_value.clone(),
                                 field_decl,
                                 &colon_position,
-                                if attributes.is_empty() {
-                                    None
-                                } else {
-                                    Some(attributes.clone())
-                                },
+                                new_field_attr,
                             );
                         } else {
                             panic!("Missing `:` character for field declaration");
