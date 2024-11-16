@@ -46,11 +46,12 @@ use dto_mapper::DtoMapper;
 More details on how to use derive_builder crate here: https://crates.io/crates/derive_builder
 
 # Example
-Let's say we want to create 3 special entities for our application
+Let's say we want to create special struct derived from a base existing **struct User** for our application
 - LoginDto that will contain only 2 fields from **User** such as _**username**_ and _**password**_. we would like to rename _**username**_ to _**login**_ in LoginDto
 - ProfileDto that will contain all fields from **User** and  will ignore only the **password** field.
 - PersonDto that will contain only 3 fields from  **User** such as _**firstname**_, _**lastname**_, and _**email**_. But we would like to make the _**email**_ field optional such that its final data type will be  _**Option<T>**_. That is if email is **String** from User, it will result in _**Option<String>**_
-
+- CustomDtoWithAttribute that will create a new field called name which will be computed from two existing fields on the struct.
+  We will add as well serde macro attributes for serialization on the struct, on an existing and a new struct field as well
 It takes only those lines below to get this work done. And the conversion are being done automatically between one dto type to the original struct and vice versa.
 
   ```rust
@@ -64,7 +65,6 @@ It takes only those lines below to get this work done. And the conversion are be
     #[allow(unused)]
     use std::str::FromStr;
     #[allow(unused)]
-
 
     fn concat_str(s1: &str, s2: &str) -> String {
         s1.to_owned() + " " + s2
@@ -83,7 +83,7 @@ It takes only those lines below to get this work done. And the conversion are be
     #[mapper(
         dto="CustomDtoWithAttribute" ,
         no_builder=true ,
-        map=[ ("email",false) ],
+        map=[ ("email", false, ["#[serde(rename = \"email_address\")]"] ) ],
         derive=(Debug, Clone, Serialize, Deserialize),
         new_fields=[
             (
