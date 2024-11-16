@@ -6,7 +6,7 @@ use std::str::FromStr;
 use unstringify::unstringify;
 
 fn concat_str(s1: &str, s2: &str) -> String {
-  s1.to_owned() + " " + s2
+    s1.to_owned() + " " + s2
 }
 
 #[derive(DtoMapper, Debug, Default, Clone)]
@@ -17,23 +17,23 @@ fn concat_str(s1: &str, s2: &str) -> String {
   new_fields=[( "name: String", "concat_str( self.firstname.as_str(), self.lastname.as_str() )" )]
 )]
 struct User {
-  username: String,
-  password: String,
-  email: String,
-  firstname: String,
-  middle_name: Option<String>,
-  lastname: String,
-  age: u8,
+    username: String,
+    password: String,
+    email: String,
+    firstname: String,
+    middle_name: Option<String>,
+    lastname: String,
+    age: u8,
 }
 
 fn main() {
-  let user = User {
-    firstname: "Dessalines".into(),
-    lastname: "Jean Jacques".into(),
-    ..User::default()
-  };
+    let user = User {
+        firstname: "Dessalines".into(),
+        lastname: "Jean Jacques".into(),
+        ..User::default()
+    };
 
-  println!("{:?}", user);
-  let custom_dto: CustomDto = user.into();
-  println!("{:?}", custom_dto);
+    println!("{:?}", user);
+    let custom_dto: CustomDto = user.into();
+    println!("{:?}", custom_dto);
 }
