@@ -3,6 +3,8 @@ All related changes will be logged here.
 
 
 ## [0.3.0] 2024-11-16
+@fatihaziz: A new Contributor has joined.dto_mapper.
+A special thanks that new contributor @fatihaziz that started the work on macro attributes for struct and fields
 - Adding macro attributes features on struct, existing mapped fields and new fields
 
 ### Changed
