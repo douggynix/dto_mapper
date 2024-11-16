@@ -244,7 +244,7 @@ struct SourceStruct{ }
       if **ignore** is present , then **map** field becomes optional. Except if needed rename destination fields for the dto
     - **derive** : list of of macro to derive from. `derive=(Debug,Clone)`
     - **no_builder**: a boolean flag to turn on or off builders for the dto. Default value is **_false_**. If the Dto name is "MyDto" , the builder will create a struct named "MyDtoBuilder" that can be used to build "MyDto" struct.
-    - ***macro_attr**: an array of macro attributes to be added on the top of the resulted **struct**. For example : macro_attr=["serde(rename_all = \"UPPERCASE\")"]
+    - **macro_attr**: an array of macro attributes to be added on the top of the resulted **struct**. For example : macro_attr=["serde(rename_all = \"UPPERCASE\")"]
     - **new_fields** : an array of declaration of new field names to include to the resulted dto structure. `new_fields=[("fieldname:type"), ("initialize_expression") ), ["macro_attribute","macro_attribute"]`.
       `fieldname:type` will create a new field with the `fieldname` specified and the `type`. It is not mandatory to rename. you can have `map=[("fieldname",true)]`
       `initialize_expression` is used an initialize value or expression to use when converting the original structure to the dto.
