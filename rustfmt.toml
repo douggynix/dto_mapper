@@ -1,0 +1,4 @@
+# You can see more config for rustfmt --help=config
+# This confirmation is for source code formatting config used along with 'cargo fmt --verbose'
+hard_tabs = false
+tab_spaces = 4
