@@ -2,7 +2,7 @@
 authors = ["James Douglass Lefruit"]
 categories = ["data-structures", "web-programming", "rust-patterns"]
 description = "A library to create dynamic DTOs (Data Transfer Object) from a structure"
-documentation = "https://github.com/douggynix/dto_mapper/tree/0.2.0"
+documentation = "https://github.com/douggynix/dto_mapper/tree/0.3.0"
 edition = "2021"
 exclude = [
   ".github/workflows/rust.yml",
@@ -14,7 +14,7 @@ license = "Apache-2.0"
 name = "dto_mapper"
 readme = "README.md"
 repository = "https://github.com/douggynix/dto_mapper"
-version = "0.2.0"
+version = "0.3.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 proc-macro = true
