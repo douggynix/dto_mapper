@@ -28,13 +28,15 @@ If we have to load a 'user' record from a database, we wouldn't want to send all
 This is where DTO Mapper Library comes handy.
 
 # Installation
-**_dto_mapper_** library depends on **_unstringify_** and **_derive_builder_** which implements builder pattern for dto objects resulted from the dto mappers.
+**_dto_mapper_** library depends **_derive_builder_** which implements builder pattern for dto objects resulted from the dto mappers.
 By default, it generate builder for the dtos.
+Early versions of the dto_mapper used to depend on **_unstringify_** crate. It is no longer required anymore and has been removed.
+If you are using this current version. You can remove this dependency from your project.
+
 You can use this instruction to install the latest version of **dto_mapper** library to your project
 ```shell
 cargo add derive_builder
 cargo add dto_mapper
-cargo add unstringify
 ```
 And import it to the rust source file you need to use it:
 ```rust
@@ -62,7 +64,7 @@ It takes only those lines below to get this work done. And the conversion are be
     #[allow(unused)]
     use std::str::FromStr;
     #[allow(unused)]
-    use unstringify::unstringify;
+
 
     fn concat_str(s1: &str, s2: &str) -> String {
         s1.to_owned() + " " + s2
