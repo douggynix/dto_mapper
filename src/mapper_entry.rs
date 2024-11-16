@@ -6,7 +6,7 @@ use syn::{
 use crate::utils;
 use crate::utils::isblank;
 
-pub type MapTuple = (String, bool);
+pub type MapTuple = (String, bool, Vec<String>);
 #[derive(Debug, Default)]
 pub struct MapperEntry {
     pub dto: String,
@@ -20,12 +20,13 @@ pub struct MapperEntry {
 }
 
 //DataStructure for the type of mapper values found in each entry
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct MapValue {
     //Literal value are consited of properties with key=value
     // dto="MyDto" , ignore="true"
     pub from_field: String,
     pub to_field: Option<String>,
+    pub macro_attr: Vec<String>,
     pub required: bool,
 }
 
@@ -49,16 +50,6 @@ impl NewField {
     }
 }
 
-impl Default for MapValue {
-    fn default() -> Self {
-        Self {
-            from_field: "".into(),
-            to_field: None,
-            required: true,
-        }
-    }
-}
-
 impl MapValue {
     fn new(map_tuple: &MapTuple) -> Self {
         let fields = map_tuple.0.as_str().split(":");
@@ -69,6 +60,7 @@ impl MapValue {
         if fields.len() > 1 && !fields[1].trim().is_empty() {
             to_field = Some(fields[1].trim().to_string());
         }
+        let macro_attr: Vec<String> = map_tuple.2.clone();
 
         let required = map_tuple.1;
 
@@ -76,6 +68,7 @@ impl MapValue {
             from_field,
             to_field,
             required,
+            macro_attr,
         }
     }
 }
@@ -287,13 +280,14 @@ impl MapperEntry {
     }
 
     fn parse_array_of_tuple(expr_arr: &ExprArray) -> Vec<MapTuple> {
-        let mut vec_tuple: Vec<(String, bool)> = Vec::new();
+        let mut vec_tuple: Vec<(String, bool, Vec<String>)> = Vec::new();
 
         for elem in expr_arr.elems.iter() {
             if let Expr::Tuple(el_exp) = elem {
                 //println!("{} content  is a Tuple",keyname);
                 let mut str_val: Option<String> = None;
                 let mut flag: Option<bool> = None;
+                let mut attrs: Vec<String> = Vec::new();
                 for content_expr in el_exp.elems.iter() {
                     if let Expr::Lit(content_lit) = content_expr {
                         if let Lit::Str(content) = &content_lit.lit {
@@ -301,15 +295,21 @@ impl MapperEntry {
                             str_val = utils::remove_white_space(&content.value()).into();
                         }
 
+                        //There can only exist one boolean
                         if let Lit::Bool(content) = &content_lit.lit {
                             //print!("  valueBool={}",content.value());
                             flag = content.value.into();
                         }
                     }
+
+                    //this will parse macro attributes for mapped fields
+                    if let Expr::Array(content_arr) = content_expr {
+                        attrs = Self::parse_array_of_macro_attr(&content_arr);
+                    }
                 }
 
                 if str_val.is_some() && flag.is_some() {
-                    let tuple: MapTuple = (str_val.unwrap(), flag.unwrap());
+                    let tuple: MapTuple = (str_val.unwrap(), flag.unwrap(), attrs);
                     vec_tuple.push(tuple);
                 }
                 //println!("");

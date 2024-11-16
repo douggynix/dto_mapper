@@ -138,11 +138,7 @@ fn build_into_fields(
 
     // let selected_fields =
     //   get_selected_fields(&st_entry, &ignore_fields, &map_fields);
-    let selected_fields = if mp_entry.exactly && map_fields.len() == 0 && ignore_fields.len() == 0 {
-        get_all_fields(&st_entry)
-    } else {
-        get_selected_fields(&st_entry, &ignore_fields, &map_fields)
-    };
+    let selected_fields = extract_selected_fields(&st_entry, mp_entry, &map_fields, &ignore_fields);
 
     selected_fields
         .iter()
@@ -182,6 +178,19 @@ fn build_into_fields(
         .collect()
 }
 
+fn extract_selected_fields(
+    st_entry: &StructEntry,
+    mp_entry: &MapperEntry,
+    map_fields: &HashMap<String, MapValue>,
+    ignore_fields: &HashSet<String>,
+) -> Vec<FieldEntry> {
+    if mp_entry.exactly && map_fields.len() == 0 && ignore_fields.len() == 0 {
+        get_all_fields(&st_entry)
+    } else {
+        get_selected_fields(&st_entry, &ignore_fields, &map_fields)
+    }
+}
+
 fn build_fields(st_entry: &StructEntry, mp_entry: &MapperEntry) -> Vec<TokenStream> {
     //we retrieve a hashmap of MapValue with key=source_field_name in the struct , and the the value as MapValue
     let map_fields = get_map_of_mapvalue(mp_entry);
@@ -189,17 +198,16 @@ fn build_fields(st_entry: &StructEntry, mp_entry: &MapperEntry) -> Vec<TokenStre
     // Let us retrieve the ignore fields
     let ignore_fields = get_ignore_fields(mp_entry);
 
-    let selected_fields = if mp_entry.exactly && map_fields.len() == 0 && ignore_fields.len() == 0 {
-        get_all_fields(&st_entry)
-    } else {
-        get_selected_fields(&st_entry, &ignore_fields, &map_fields)
-    };
+    let selected_fields = extract_selected_fields(&st_entry, mp_entry, &map_fields, &ignore_fields);
 
     let tk_stream_iterator = selected_fields.iter().map(|field| {
         let mut name = format!("{}", field.field_name.to_string());
         let mut name_ident = format_ident!("{}", name.as_str());
 
         let ty = &field.field_type;
+
+        let mut attributes: Vec<TokenStream> = Vec::new();
+
         if let Some(m_value) = map_fields.get(&name) {
             //let's rename the struct field if there is a mapping for it
             if let Some(ref new_name) = m_value.to_field {
@@ -207,12 +215,24 @@ fn build_fields(st_entry: &StructEntry, mp_entry: &MapperEntry) -> Vec<TokenStre
                 name_ident = format_ident!("{}", name.as_str())
             }
 
+            attributes = m_value
+                .macro_attr
+                .iter()
+                .map(|attr| parse_str(attr).unwrap())
+                .collect();
+
             if !m_value.required && !field.is_optional {
-                return quote! { pub #name_ident: Option<#ty> };
+                return quote! {
+                    #(#attributes)*
+                    pub #name_ident: Option<#ty>
+                };
             }
         }
 
-        quote! { pub #name_ident: #ty }
+        quote! {
+            #(#attributes)*
+            pub #name_ident: #ty
+        }
     });
 
     let mut struct_fields = tk_stream_iterator.collect::<Vec<TokenStream>>();

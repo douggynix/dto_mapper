@@ -22,12 +22,12 @@ mod test_dto_creation {
     #[mapper(
     dto="CustomDtoWithAttribute" ,
     no_builder=true ,
-    map=[ ("email",false) ],
+    map=[ ("email", false, ["#[serde(rename = \"email_address\")]"] ) ],
     derive=(Debug, Clone, Serialize, Deserialize),
     new_fields=[(
         "name: String",
         "concat_str( self.firstname.as_str(), self.lastname.as_str() )",
-        ["#[serde(rename = \"renamed_name\")]"],
+        ["#[serde(rename = \"full_name\")]"],
     )],
     macro_attr=["serde(rename_all = \"UPPERCASE\")"]
   )]
@@ -161,7 +161,7 @@ mod test_dto_creation {
         let json_string = serde_json::to_string(&custom_dto).unwrap();
         assert_eq!(
             json_string,
-            r#"{"EMAIL":"Dessalines@gmail.com","renamed_name":"Jean Jacques"}"#
+            r#"{"email_address":"Dessalines@gmail.com","full_name":"Jean Jacques"}"#
         );
     }
 }
