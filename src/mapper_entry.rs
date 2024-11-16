@@ -155,7 +155,7 @@ impl MapperEntry {
 
         //dto property is required and must be checked
         match dto_prop {
-            Some(val) if utils::isblank(&val) => Err(syn::Error::new(
+            Some(val) if isblank(&val) => Err(syn::Error::new(
                 attr.span(),
                 "`dto` property is blank. It must not have whitespace",
             )),
@@ -163,7 +163,7 @@ impl MapperEntry {
                 attr.span(),
                 "`dto` property is missing.It is required for mapper",
             )),
-            _ => syn::Result::Ok(mapper_entry),
+            _ => Ok(mapper_entry),
         }
     }
 
@@ -217,12 +217,7 @@ impl MapperEntry {
         let ignore_arr = Self::parse_array_of_string(expr_arr);
         //println!("{}={:?}",keyname, ignore_arr);
         //check if matt attribute is blank
-        if ignore_arr
-            .iter()
-            .filter(|&text| utils::isblank(text))
-            .count()
-            > 0
-        {
+        if ignore_arr.iter().filter(|&text| isblank(text)).count() > 0 {
             panic!("`{}` attribute must not be blank", IGNORE);
         };
         mapper_entry.ignore = ignore_arr;
@@ -262,7 +257,7 @@ impl MapperEntry {
         if mapper_entry
             .map
             .iter()
-            .filter(|&m_val| utils::isblank(&m_val.from_field))
+            .filter(|&m_val| isblank(&m_val.from_field))
             .count()
             > 0
         {
@@ -270,14 +265,14 @@ impl MapperEntry {
         };
     }
 
-    fn parse_array_of_macro_attr(expr_arr: &syn::ExprArray) -> Vec<String> {
+    fn parse_array_of_macro_attr(expr_arr: &ExprArray) -> Vec<String> {
         let mut vec_tuple: Vec<String> = Vec::new();
 
         for elem in expr_arr.elems.iter() {
             Self::process_macro_attr(&mut vec_tuple, elem);
         }
 
-        return vec_tuple;
+        vec_tuple
     }
     fn process_macro_attr(vec_array: &mut Vec<String>, elem: &Expr) {
         if let Expr::Lit(content_lit) = elem {
@@ -291,7 +286,7 @@ impl MapperEntry {
         // eprintln!("elem={:#?}", elem);
     }
 
-    fn parse_array_of_tuple(expr_arr: &syn::ExprArray) -> Vec<MapTuple> {
+    fn parse_array_of_tuple(expr_arr: &ExprArray) -> Vec<MapTuple> {
         let mut vec_tuple: Vec<(String, bool)> = Vec::new();
 
         for elem in expr_arr.elems.iter() {
@@ -321,17 +316,17 @@ impl MapperEntry {
             }
         }
 
-        return vec_tuple;
+        vec_tuple
     }
 
-    fn parse_array_of_new_fields(expr_arr: &syn::ExprArray) -> Vec<NewField> {
+    fn parse_array_of_new_fields(expr_arr: &ExprArray) -> Vec<NewField> {
         let mut vec_tuple: Vec<NewField> = Vec::new();
 
         for elem in expr_arr.elems.iter() {
             Self::process_new_fields(&mut vec_tuple, elem);
         }
 
-        return vec_tuple;
+        vec_tuple
     }
 
     fn process_new_fields(mut vec_tuple: &mut Vec<NewField>, elem: &Expr) {
@@ -428,7 +423,7 @@ impl MapperEntry {
         ));
     }
 
-    fn parse_array_of_string(expr_arr: &syn::ExprArray) -> Vec<String> {
+    fn parse_array_of_string(expr_arr: &ExprArray) -> Vec<String> {
         let mut vec_str: Vec<String> = Vec::new();
         for elem in expr_arr.elems.iter() {
             if let Expr::Lit(lit_expr) = elem {
@@ -439,7 +434,7 @@ impl MapperEntry {
                 }
             }
         }
-        return vec_str;
+        vec_str
     }
 }
 
