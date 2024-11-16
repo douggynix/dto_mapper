@@ -6,7 +6,6 @@ mod test_dto_creation {
     #[allow(unused)]
     use std::str::FromStr;
     #[allow(unused)]
-    use unstringify::unstringify;
 
     fn concat_str(s1: &str, s2: &str) -> String {
         s1.to_owned() + " " + s2
@@ -24,11 +23,17 @@ mod test_dto_creation {
     no_builder=true ,
     map=[ ("email", false, ["#[serde(rename = \"email_address\")]"] ) ],
     derive=(Debug, Clone, Serialize, Deserialize),
-    new_fields=[(
-        "name: String",
-        "concat_str( self.firstname.as_str(), self.lastname.as_str() )",
-        ["#[serde(rename = \"full_name\")]"],
-    )],
+    new_fields=[
+        (
+            "name: String",
+            "concat_str( self.firstname.as_str(), self.lastname.as_str() )",
+            ["#[serde(rename = \"full_name\")]"],
+        ),
+        (
+          "hidden_password: String",
+         r#""*".repeat( self.password.len() )"#
+        ),
+    ],
     macro_attr=["serde(rename_all = \"UPPERCASE\")"]
   )]
     struct User {
@@ -149,19 +154,21 @@ mod test_dto_creation {
 
     #[test]
     fn test_custom_dto_with_struct_attributes() {
-        let user = CustomDtoWithAttribute {
-            email: Some("Dessalines@gmail.com".to_string()),
-            name: "Jean Jacques".into(),
-            ..CustomDtoWithAttribute::default()
+        let user = User {
+            firstname: "Dessalines".into(),
+            lastname: "Jean Jacques".into(),
+            email: "dessalines@gmail.com".into(),
+            password: "hello123".into(),
+            ..User::default()
         };
         let custom_dto: CustomDtoWithAttribute = user.clone().into();
-        assert_eq!(custom_dto.email, user.email);
+        assert_eq!(custom_dto.clone().email.unwrap(), user.email);
 
         // check json serialization
         let json_string = serde_json::to_string(&custom_dto).unwrap();
         assert_eq!(
             json_string,
-            r#"{"email_address":"Dessalines@gmail.com","full_name":"Jean Jacques"}"#
+            r#"{"email_address":"dessalines@gmail.com","full_name":"Dessalines Jean Jacques","HIDDEN_PASSWORD":"********"}"#
         );
     }
 }

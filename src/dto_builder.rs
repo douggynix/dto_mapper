@@ -272,14 +272,24 @@ fn build_init_new_fields_token(mp_entry: &MapperEntry) -> Vec<TokenStream> {
         .iter()
         .map(|new_field| {
             let name = format_ident!("{}", new_field.field_name.as_str());
-            let expr = &new_field.expression_value;
+            //let expr = &new_field.expression_value;
+            let expr: syn::Expr = match parse_str(new_field.expression_value.as_str()) {
+                Ok(assign_expr) => assign_expr,
+                Err(expr_error) => {
+                    //eprintln!("Failed to parse expression value {} : {}", new_field.expression_value, expr_error);
+                    panic!(
+                        r#"Failed to parse new field '{}' expression value "{}" : {}"#,
+                        new_field.field_name, new_field.expression_value, expr_error
+                    );
+                }
+            };
             // let f_type = &new_field.field_type;
 
             // eprintln!("required = {:#?}", new_field.required);
             // eprintln!("expr = {:#?}", expr);
             // eprintln!("f_type = {:#?}", f_type);
 
-            quote! { #name: unstringify!(#expr) }
+            quote! { #name: #expr }
         })
         .collect()
 }
