@@ -83,11 +83,17 @@ It takes only those lines below to get this work done. And the conversion are be
         no_builder=true ,
         map=[ ("email",false) ],
         derive=(Debug, Clone, Serialize, Deserialize),
-        new_fields=[(
-            "name: String",
-            "concat_str( self.firstname.as_str(), self.lastname.as_str() )",
-            ["#[serde(rename = \"renamed_name\")]"], // attribute of fields
-        )],
+        new_fields=[
+            (
+                "name: String",
+                "concat_str( self.firstname.as_str(), self.lastname.as_str() )",
+                ["#[serde(rename = \"renamed_name\")]"], // attribute of fields
+            ),
+            (
+               "hidden_password: String",
+               r#""*".repeat( self.password.len() )"#
+            ),
+        ],
         macro_attr=["serde(rename_all = \"UPPERCASE\")"] // atriibute of struct
     )]
     struct User{
@@ -167,6 +173,15 @@ pub struct PersonDto {
     pub firstname: String,
     pub lastname: String,
 } // size = 72 (0x48), align = 0x8
+
+#[serde(rename_all = "UPPERCASE")]
+pub struct CustomDtoWithAttribute {
+    #[serde(rename = "email_address")]
+    pub email: Option<String>,
+    #[serde(rename = "full_name")]
+    pub name: String,
+    pub hidden_password: String,
+}
 ```
 
 
@@ -203,7 +218,8 @@ impl Into<CustomDto> for User {
 You can install 'expand' binary crate and use ***cargo expand*** command in order to print out the DTO structures generated as shown above:
 ```shell
 cargo install expand
-cargo expand
+#you can try this command from this library root directory
+cargo expand dto_example
 ```
 # Description of macro derive and attributes for Dto Mapper
 First, DTO Mapper library requires that the source struct implements Default traits as the library relies on it to implement Into Traits for conversion between DTO and Source struct.
@@ -217,18 +233,21 @@ struct SourceStruct{ }
   - **Required fields** will result in build errors if not present.
     - **dto** : name for the dto that will result into a struct with the same name. Example : `dto="MyDto"` will result into a struct named **MyDto**.
       dto names must be unique. Otherwise, it will result into build errors.
-    - **map** : an array of field names from the original struct to include or  map to the new dto as fields. `map=[("fieldname:new_fieldname", required_flag )]`.
+    - **map** : an array of field names from the original struct to include or  map to the new dto as fields. `map=[("fieldname:new_fieldname", required_flag, ["field_attribute", "field_attribute"]  )]`.
       `fieldname:new_fieldname` will rename the source field to the new one. It is not mandatory to rename. you can have `map=[("fieldname",true)]`
       `required_flag` can be true or false. if required_flag is false it will make the field an **Option** type in the dto.
+      `field_attributes` are lists of macro attributes to be added to a particular field. For Example map=[("fieldname",true, ["#[serde(rename = \"full_name\")]"] )].
 
        if `required_flag` is set to true, the destination dto field  will be exactly of the same type with the source one in the struct.
   - **Optional fields**
     - **ignore** : an array of fieldnames not to include in the destination dtos. `ignore=["field1", "field1"]`
       if **ignore** is present , then **map** field becomes optional. Except if needed rename destination fields for the dto
-    - **derive** : a list of of macro to derive from. `derive=(Debug,Clone)`
+    - **derive** : list of of macro to derive from. `derive=(Debug,Clone)`
     - **no_builder**: a boolean flag to turn on or off builders for the dto. Default value is **_false_**. If the Dto name is "MyDto" , the builder will create a struct named "MyDtoBuilder" that can be used to build "MyDto" struct.
-    - **new_fields** : an array of declaration of new field names to include to the resulted dto structure. `new_fields=[("fieldname:type"), ("initialize_expression") )]`.
+    - ***macro_attr**: an array of macro attributes to be added on the top of the resulted **struct**. For example : macro_attr=["serde(rename_all = \"UPPERCASE\")"]
+    - **new_fields** : an array of declaration of new field names to include to the resulted dto structure. `new_fields=[("fieldname:type"), ("initialize_expression") ), ["macro_attribute","macro_attribute"]`.
       `fieldname:type` will create a new field with the `fieldname` specified and the `type`. It is not mandatory to rename. you can have `map=[("fieldname",true)]`
       `initialize_expression` is used an initialize value or expression to use when converting the original structure to the dto.
-      For instance `new_fields=[("name:String"), ("concat_str(self.firstname,self.lastname)") )]` will create a new field in the dto called `name` which will be initialized with the concatenation of the original struct `firstname` and `lastname` fields. See the example above.
+      `macro_attribute` will add a macro declaration on the top of this field. it is an array of attributes. It is **optional** and not required.
+      For instance `new_fields=[( "name:String", "concat_str(self.firstname,self.lastname)" , ["#[serde(rename = \"full_name\")]"] )]` will create a new field in the dto called `name` which will be initialized with the concatenation of the original struct `firstname` and `lastname` fields. See the example above.
       **I would strongly suggest to use function  as `initialize_expression` for more complex scenarios in case parsing is failing when writing complex inline expression directly. This will reduce code complexity!!**
