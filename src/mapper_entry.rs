@@ -271,7 +271,7 @@ impl MapperEntry {
         if let Expr::Lit(content_lit) = elem {
             // eprintln!("content_lit={:?}", content_lit);
             if let Lit::Str(content) = &content_lit.lit {
-                vec_array.push(utils::remove_white_space(&content.value()).into());
+                vec_array.push(content.value().trim().to_string());
             }
         }
         // eprintln!("================>");
