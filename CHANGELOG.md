@@ -1,6 +1,17 @@
 ### Changelog
 All related changes will be logged here.
 
+## [0.3.1] 2024-12-28
+- Fixing bug that erroneously removing white space from attributes
+  For example, before,  an attribute like this:
+```rust
+#[validate(email(message = "invalid email address")]
+```
+would be interpolated into that:
+```rust
+#[validate(email(message = "invalidemailaddress")]
+```
+This change addresses that and fixes it.
 
 ## [0.3.0] 2024-11-16
 @fatihaziz: A new Contributor has joined.dto_mapper.
