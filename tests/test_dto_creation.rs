@@ -5,6 +5,7 @@ mod test_dto_creation {
     use serde::{Deserialize, Serialize};
     #[allow(unused)]
     use std::str::FromStr;
+    use validator::{Validate, ValidationErrors};
     #[allow(unused)]
 
     fn concat_str(s1: &str, s2: &str) -> String {
@@ -21,20 +22,31 @@ mod test_dto_creation {
     #[mapper(
     dto="CustomDtoWithAttribute" ,
     no_builder=true ,
-    map=[ ("email", false, ["#[serde(rename = \"email_address\")]"] ) ],
-    derive=(Debug, Clone, Serialize, Deserialize),
+    derive=(Debug, Clone, Serialize, Deserialize, Validate),
+    map=[(  "email",
+            false,
+            [
+                "#[serde(rename = \"email_address\")]",
+                "#[validate(email(message = \"Invalid Email Address\") ) ]",
+            ]
+        )],
     new_fields=[
         (
             "name: String",
             "concat_str( self.firstname.as_str(), self.lastname.as_str() )",
-            ["#[serde(rename = \"full_name\")]"],
+            [
+                "#[serde(rename = \"full_name\")]",
+                "#[validate( length( max=3, message= \"Too short\" ) )]",
+            ],
         ),
         (
           "hidden_password: String",
          r#""*".repeat( self.password.len() )"#
         ),
     ],
-    macro_attr=["serde(rename_all = \"UPPERCASE\")"]
+    macro_attr=[
+        "#[serde(rename_all = \"UPPERCASE\")]",
+    ]
   )]
     struct User {
         username: String,
@@ -157,18 +169,27 @@ mod test_dto_creation {
         let user = User {
             firstname: "Dessalines".into(),
             lastname: "Jean Jacques".into(),
-            email: "dessalines@gmail.com".into(),
+            email: "dessalinesgmail.com".into(),
             password: "hello123".into(),
             ..User::default()
         };
+
         let custom_dto: CustomDtoWithAttribute = user.clone().into();
+
+        //Check validator
+        let validation_errors: ValidationErrors = custom_dto.validate().unwrap_err();
+
+        assert!(validation_errors.0.contains_key("email"));
+        assert!(validation_errors.0.contains_key("name"));
+        println!("Validation error = {}", validation_errors.to_string());
         assert_eq!(custom_dto.clone().email.unwrap(), user.email);
 
         // check json serialization
-        let json_string = serde_json::to_string(&custom_dto).unwrap();
+        let json_string =
+            serde_json::to_string(&custom_dto).expect("Failed to Json deserialize custom_dto");
         assert_eq!(
             json_string,
-            r#"{"email_address":"dessalines@gmail.com","full_name":"Dessalines Jean Jacques","HIDDEN_PASSWORD":"********"}"#
+            r#"{"email_address":"dessalinesgmail.com","full_name":"Dessalines Jean Jacques","HIDDEN_PASSWORD":"********"}"#
         );
     }
 }
