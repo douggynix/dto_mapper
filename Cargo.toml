@@ -2,7 +2,7 @@
 authors = ["James Douglass Lefruit"]
 categories = ["data-structures", "web-programming", "rust-patterns"]
 description = "A library to create dynamic DTOs (Data Transfer Object) from a structure"
-documentation = "https://github.com/douggynix/dto_mapper/tree/0.3.1"
+documentation = "https://github.com/douggynix/dto_mapper/tree/0.3.2"
 edition = "2021"
 exclude = [
   ".github/workflows/rust.yml",
