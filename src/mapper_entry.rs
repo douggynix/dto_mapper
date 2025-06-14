@@ -50,14 +50,14 @@ impl NewField {
 impl MapValue {
     fn new(map_tuple: &MapTuple) -> Self {
         let fields: Vec<&str> = map_tuple.0.split(':').collect();
-        
+
         let from_field = fields[0].to_string();
         let to_field = if fields.len() > 1 && !fields[1].trim().is_empty() {
             Some(fields[1].trim().to_string())
         } else {
             None
         };
-        
+
         Self {
             from_field,
             to_field,
@@ -86,7 +86,7 @@ impl MapperEntry {
 
         // dto property is required
         let mut dto_prop: Option<String> = None;
-        
+
         for meta in nested.iter() {
             if let Meta::NameValue(metaname) = meta {
                 if let Some(ident) = metaname.path.get_ident() {
@@ -96,28 +96,28 @@ impl MapperEntry {
                         Expr::Lit(expr) if keyname.eq_ignore_ascii_case(DTO) => {
                             Self::parse_dto_attribute(&mut mapper_entry, expr);
                             dto_prop = Some(mapper_entry.dto.clone());
-                        },
+                        }
                         Expr::Lit(expr) if keyname.eq_ignore_ascii_case(WITHOUT_BUILDER) => {
                             Self::parse_no_builder_attribute(&mut mapper_entry, expr);
-                        },
+                        }
                         Expr::Lit(expr) if keyname.eq_ignore_ascii_case(EXACTLY) => {
                             Self::parse_exactly_attribute(&mut mapper_entry, expr);
-                        },
+                        }
                         Expr::Array(expr_arr) if keyname.eq_ignore_ascii_case(MAP) => {
                             Self::parse_map_attribute(&mut mapper_entry, expr_arr);
-                        },
+                        }
                         Expr::Array(expr_arr) if keyname.eq_ignore_ascii_case(NEW_FIELDS) => {
                             Self::parse_new_fields_attribute(&mut mapper_entry, expr_arr);
-                        },
+                        }
                         Expr::Array(expr_arr) if keyname.eq_ignore_ascii_case(MACRO_ATTR) => {
                             Self::parse_macro_attr_attribute(&mut mapper_entry, expr_arr);
-                        },
+                        }
                         Expr::Array(expr_arr) if keyname.eq_ignore_ascii_case(IGNORE) => {
                             Self::parse_ignore_attribute(&mut mapper_entry, expr_arr);
-                        },
+                        }
                         Expr::Tuple(tuple_expr) if keyname.eq_ignore_ascii_case(DERIVE) => {
                             Self::parse_derive_attribute(&mut mapper_entry, tuple_expr);
-                        },
+                        }
                         _ => {}
                     }
                 }
@@ -183,17 +183,17 @@ impl MapperEntry {
 
     fn parse_ignore_attribute(mapper_entry: &mut MapperEntry, expr_arr: &ExprArray) {
         let ignore_arr = Self::parse_array_of_string(expr_arr);
-        
+
         if ignore_arr.iter().any(|text| isblank(text)) {
             panic!("`{}` attribute must not be blank", IGNORE);
         }
-        
+
         mapper_entry.ignore = ignore_arr;
     }
 
     fn parse_new_fields_attribute(mapper_entry: &mut MapperEntry, expr_arr: &ExprArray) {
         mapper_entry.new_fields = Self::parse_array_of_new_fields(expr_arr);
-        
+
         if mapper_entry.new_fields.is_empty() {
             panic!(
                 "`{}` attribute must not be empty or have odd number of elements",
@@ -204,7 +204,7 @@ impl MapperEntry {
 
     fn parse_macro_attr_attribute(mapper_entry: &mut MapperEntry, expr_arr: &ExprArray) {
         mapper_entry.macro_attr = Self::parse_array_of_macro_attr(expr_arr);
-        
+
         if mapper_entry.macro_attr.iter().any(|attr| isblank(attr)) {
             panic!(
                 "`{}` attribute must not be empty. Remove it if it's not needed. {:?}",
@@ -216,8 +216,12 @@ impl MapperEntry {
     fn parse_map_attribute(mapper_entry: &mut MapperEntry, expr_arr: &ExprArray) {
         let map_tuples = Self::parse_array_of_tuple(expr_arr);
         mapper_entry.map = map_tuples.iter().map(MapValue::new).collect();
-        
-        if mapper_entry.map.iter().any(|m_val| isblank(&m_val.from_field)) {
+
+        if mapper_entry
+            .map
+            .iter()
+            .any(|m_val| isblank(&m_val.from_field))
+        {
             panic!("`{}` attribute must not be blank", MAP);
         }
     }
@@ -227,37 +231,39 @@ impl MapperEntry {
     }
 
     fn parse_array_of_tuple(expr_arr: &ExprArray) -> Vec<MapTuple> {
-        expr_arr.elems.iter()
+        expr_arr
+            .elems
+            .iter()
             .filter_map(|elem| match elem {
                 Expr::Tuple(el_exp) => {
                     let mut str_val = None;
                     let mut flag = None;
                     let mut attrs = Vec::new();
-                    
+
                     for content_expr in &el_exp.elems {
                         match content_expr {
                             Expr::Lit(content_lit) => match &content_lit.lit {
                                 Lit::Str(content) => {
                                     str_val = Some(utils::remove_white_space(&content.value()));
-                                },
+                                }
                                 Lit::Bool(content) => {
                                     flag = Some(content.value);
-                                },
+                                }
                                 _ => {}
                             },
                             Expr::Array(content_arr) => {
                                 attrs = Self::parse_array_of_macro_attr(content_arr);
-                            },
+                            }
                             _ => {}
                         }
                     }
-                    
+
                     match (str_val, flag) {
                         (Some(s), Some(f)) => Some((s, f, attrs)),
-                        _ => None
+                        _ => None,
                     }
-                },
-                _ => None
+                }
+                _ => None,
             })
             .collect()
     }
@@ -284,7 +290,8 @@ impl MapperEntry {
                         // Field name or value
                         if let Expr::Lit(content_lit) = content_expr {
                             if let Lit::Str(content) = &content_lit.lit {
-                                field_data[position % 2] = Some(utils::remove_white_space(&content.value()));
+                                field_data[position % 2] =
+                                    Some(utils::remove_white_space(&content.value()));
                             }
                         }
                     }
@@ -298,7 +305,7 @@ impl MapperEntry {
                 // Process the field when we have all provided arguments
                 if total_passed_args - 1 == position {
                     Self::process_field_data(vec_tuple, &field_data, attributes);
-                    
+
                     // Reset for next field
                     field_data = [None, None];
                     attributes = Vec::new();
@@ -306,11 +313,11 @@ impl MapperEntry {
             }
         }
     }
-    
+
     fn process_field_data(
         vec_tuple: &mut Vec<NewField>,
         field_data: &[Option<String>; 2],
-        attributes: Vec<String>
+        attributes: Vec<String>,
     ) {
         if let (Some(field_decl), Some(field_value)) = (&field_data[0], &field_data[1]) {
             if let Some(colon_position) = field_decl.find(':') {
@@ -350,12 +357,7 @@ impl MapperEntry {
         let field_name = &field_decl[..colon_position];
         let field_type = &field_decl[colon_position + 1..];
 
-        vec_tuple.push(NewField::new(
-            field_name,
-            field_type,
-            &value,
-            attributes,
-        ));
+        vec_tuple.push(NewField::new(field_name, field_type, &value, attributes));
     }
 
     fn parse_array_of_string(expr_arr: &ExprArray) -> Vec<String> {
@@ -372,9 +374,9 @@ fn extract_attributes(expr: &Expr) -> Vec<String> {
             .filter_map(|elem| match elem {
                 Expr::Lit(lit_expr) => match &lit_expr.lit {
                     Lit::Str(str_lit) => Some(str_lit.value().trim().to_string()),
-                    _ => None
+                    _ => None,
                 },
-                _ => None
+                _ => None,
             })
             .collect(),
         _ => Vec::new(),
@@ -382,7 +384,9 @@ fn extract_attributes(expr: &Expr) -> Vec<String> {
 }
 
 fn extract_string_literals(expr_arr: &ExprArray, trim_whitespace: bool) -> Vec<String> {
-    expr_arr.elems.iter()
+    expr_arr
+        .elems
+        .iter()
         .filter_map(|elem| match elem {
             Expr::Lit(lit_expr) => match &lit_expr.lit {
                 Lit::Str(content) => {
@@ -392,10 +396,10 @@ fn extract_string_literals(expr_arr: &ExprArray, trim_whitespace: bool) -> Vec<S
                     } else {
                         utils::remove_white_space(&value)
                     })
-                },
-                _ => None
+                }
+                _ => None,
             },
-            _ => None
+            _ => None,
         })
         .collect()
 }

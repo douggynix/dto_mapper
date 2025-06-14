@@ -1,53 +1,78 @@
-use std::{
-    collections::{HashMap, HashSet},
-    ops::Add,
-};
+use std::collections::{HashMap, HashSet};
 
 use crate::{mapper_entry::MapperEntry, struct_entry::StructEntry};
 
+/// Represents specific field-related validation errors
 #[derive(Debug)]
 #[allow(dead_code)]
 pub enum FieldError {
+    /// Indicates a duplicate field was found (with error message)
     DupField(String),
+    /// Indicates a required field is missing (with error message)
     MissingField(String),
 }
 
+/// Represents validation errors that can occur during DTO mapping validation
 #[derive(Debug)]
 #[allow(dead_code)]
 pub enum ValidationError {
+    /// Errors related to mapper entry field validation
     MapperEntryError(Vec<FieldError>),
+    /// Errors related to struct entry field validation
     StructEntryError(Vec<FieldError>),
+    /// Duplicate DTO names were found
     DtoNameDuplicated(Vec<String>),
+    /// A required property is missing from a mapper
     MissingPropertyError(String),
 }
 
+/// Validates all aspects of the DTO mapping configuration
+///
+/// # Arguments
+///
+/// * `st_entry` - The source struct entry to validate against
+/// * `mp_entries` - The mapper entries to validate
+///
+/// # Returns
+///
+/// * `Ok(())` if validation passes
+/// * `Err(ValidationError)` with the first validation error encountered
 pub fn validate_entry_data(
     st_entry: &StructEntry,
-    mp_entries: &Vec<MapperEntry>,
+    mp_entries: &[MapperEntry],
 ) -> Result<(), ValidationError> {
-    validate_mapper_entries(&mp_entries)?;
-    validate_struct_entry(st_entry, &mp_entries)?;
-    validate_dto_name(&mp_entries)?;
-    validate_map_ignore(&mp_entries)?;
+    // Run all validations and collect any errors
+    let validation_results = [
+        validate_mapper_entries(mp_entries),
+        validate_struct_entry(st_entry, mp_entries),
+        validate_dto_name(mp_entries),
+        validate_map_ignore(mp_entries),
+    ];
+    
+    // Return the first error encountered, if any
+    for result in validation_results {
+        if let Err(err) = result {
+            return Err(err);
+        }
+    }
+    
     Ok(())
 }
 
-fn validate_map_ignore(mp_entries: &Vec<MapperEntry>) -> Result<(), ValidationError> {
-    //There should be at least a map attribute or an ignore attribute per mapper entry
-    // valid mapper entry = ignore.len() > 0 || map.len() > 0
-    // invalid mapper entry = ignore.len() == 0 and map.len()==0
-    // except if they has exactly=true
+/// Validates that each mapper entry has at least one mapping property
+///
+/// Each mapper entry must have either:
+/// - At least one map attribute, or
+/// - At least one ignore attribute, or
+/// - The exactly flag set to true
+fn validate_map_ignore(mp_entries: &[MapperEntry]) -> Result<(), ValidationError> {
     let invalid_entries: Vec<String> = mp_entries
         .iter()
-        .filter(|mp_entry| {
-            return mp_entry.map.len() == 0
-                && mp_entry.ignore.len() == 0
-                && mp_entry.exactly == false;
-        })
-        .map(|mp_entry| mp_entry.dto.to_string())
+        .filter(|entry| entry.map.is_empty() && entry.ignore.is_empty() && !entry.exactly)
+        .map(|entry| entry.dto.clone())
         .collect();
 
-    if invalid_entries.len() > 0 {
+    if !invalid_entries.is_empty() {
         return Err(ValidationError::MissingPropertyError(
             "mapper requires a `map` or an `ignore` property".to_string(),
         ));
@@ -56,128 +81,164 @@ fn validate_map_ignore(mp_entries: &Vec<MapperEntry>) -> Result<(), ValidationEr
     Ok(())
 }
 
-fn validate_dto_name(mp_entries: &Vec<MapperEntry>) -> Result<(), ValidationError> {
-    let mut dto_hash: HashMap<String, u8> = HashMap::new();
-    mp_entries.iter().for_each(|mp_entry| {
-        if let Some((ref key, ref count)) = dto_hash.get_key_value(&mp_entry.dto) {
-            dto_hash.insert(key.to_string(), count.add(1))
-        } else {
-            dto_hash.insert(mp_entry.dto.to_string(), 1)
-        };
-    });
-
-    let dto_dup: Vec<String> = map_hashmap_to_vec_string(&mut dto_hash);
-    if dto_dup.len() > 0 {
-        return Err(ValidationError::DtoNameDuplicated(dto_dup));
+/// Validates that DTO names are unique across all mapper entries
+fn validate_dto_name(mp_entries: &[MapperEntry]) -> Result<(), ValidationError> {
+    // Count occurrences of each DTO name
+    let mut dto_counts = HashMap::new();
+    for entry in mp_entries {
+        *dto_counts.entry(entry.dto.clone()).or_insert(0) += 1;
     }
+
+    // Collect names that appear more than once
+    let duplicates: Vec<String> = dto_counts
+        .into_iter()
+        .filter(|(_, count)| *count > 1)
+        .map(|(name, _)| name)
+        .collect();
+        
+    if !duplicates.is_empty() {
+        return Err(ValidationError::DtoNameDuplicated(duplicates));
+    }
+    
     Ok(())
 }
 
-fn map_hashmap_to_vec_string(dto_hash: &mut HashMap<String, u8>) -> Vec<String> {
-    dto_hash
-        .iter()
-        .filter(|(ref _k, &val)| val > 1)
-        .map(|(ref dto_val, &_)| dto_val.to_string())
-        .collect()
-}
-
+/// Validates that all fields referenced in mapper entries exist in the source struct
 fn validate_struct_entry(
     st_entry: &StructEntry,
-    mp_entries: &Vec<MapperEntry>,
+    mp_entries: &[MapperEntry],
 ) -> Result<(), ValidationError> {
-    //extract a hashset of the fields name from the struct
-    let field_set: HashSet<String> = st_entry
+    // Create a set of valid field names from the struct
+    let valid_fields: HashSet<String> = st_entry
         .field_entries
         .iter()
-        .map(|f| f.field_name.as_str().to_string())
+        .map(|f| f.field_name.clone())
         .collect();
 
-    let mut errors: Vec<FieldError> = Vec::new();
-    for ref mp_entry in mp_entries {
-        let missing_fields: Vec<String> = mp_entry
+    let mut errors = Vec::new();
+    
+    // Check each mapper entry for fields that don't exist in the struct
+    for entry in mp_entries {
+        let missing_fields: Vec<String> = entry
             .map
             .iter()
-            .filter(|&mp_value| !field_set.contains(&mp_value.from_field))
-            .map(|m| m.from_field.as_str().to_string())
+            .filter(|value| !valid_fields.contains(&value.from_field))
+            .map(|value| value.from_field.clone())
             .collect();
-        if missing_fields.len() > 0 {
+            
+        if !missing_fields.is_empty() {
             errors.push(FieldError::MissingField(format!(
-                "{} field name doesn't exist in structure={}. List of wrong map field names : {:?}",
-                mp_entry.dto, st_entry.name, missing_fields
+                "{} field name doesn't exist in structure={}. List of wrong map field names: {:?}",
+                entry.dto, st_entry.name, missing_fields
             )));
         }
     }
-    //println!("Validation Error : {:?}", errors);
-    if errors.len() > 0 {
+    
+    if !errors.is_empty() {
         return Err(ValidationError::StructEntryError(errors));
     }
+    
     Ok(())
 }
 
-fn validate_mapper_entries(mp_entries: &Vec<MapperEntry>) -> Result<(), ValidationError> {
-    //verify if we have duplicate field names in mp_entry for source and destination map fields
+/// Validates mapper entries for duplicate fields and other mapping errors
+fn validate_mapper_entries(mp_entries: &[MapperEntry]) -> Result<(), ValidationError> {
+    let mut errors = Vec::new();
 
-    let mut errors: Vec<FieldError> = Vec::new();
-
-    for mp_entry in mp_entries {
-        let mut from_set: HashMap<String, u8> = HashMap::new();
-        let mut to_set: HashMap<String, u8> = HashMap::new();
-        mp_entry.map.iter().for_each(|m_value| {
-            if let Some((ref key, ref count)) = from_set.get_key_value(&m_value.from_field) {
-                from_set.insert(key.to_string(), count.add(1));
-            } else {
-                from_set.insert(m_value.from_field.to_string(), 1);
-            }
-
-            //if from_field is mapped to to_field
-            if let Some(ref to_field) = m_value.to_field {
-                if let Some((key, count)) = to_set.get_key_value(to_field) {
-                    to_set.insert(key.to_string(), count.add(1));
-                } else {
-                    to_set.insert(to_field.to_string(), 1);
-                }
-            }
-        });
-        //println!();
-        //println!("======dto={} from_field_map={:?}",mp_entry.dto,from_set);
-        //println!("======dto={} to_field_map={:?}",mp_entry.dto,to_set);
-
-        // to_keys.len() will always be lesser than or equal to from_keys.len()
-        let dup_fields: Vec<String> = to_set
-            .iter()
-            .filter(|(ref key, &_c)| from_set.contains_key(&key.to_string()))
-            .map(|(ref key, &_c)| key.to_string())
-            .collect();
-
-        if dup_fields.len() > 0 {
-            errors.push(FieldError::DupField(format!(
-                "duplicate mapping destination keys found in dto={} entry: {:?}",
-                mp_entry.dto, dup_fields
-            )));
-        }
-
-        let dup_from: Vec<String> = map_hashmap_to_vec_string(&mut from_set);
-
-        if dup_from.len() > 0 {
-            errors.push(FieldError::DupField(format!(
-                "duplicate source key names found in dto={} entry: {:?}",
-                mp_entry.dto, dup_from
-            )));
-        }
-
-        let dup_to: Vec<String> = map_hashmap_to_vec_string(&mut to_set);
-
-        if dup_to.len() > 0 {
-            errors.push(FieldError::DupField(format!(
-                "duplicate destination key names found in dto={} entry: {:?}",
-                mp_entry.dto, dup_to
-            )));
-        }
+    for entry in mp_entries {
+        check_duplicate_fields(entry, &mut errors);
     }
 
-    if errors.len() > 0 {
+    if !errors.is_empty() {
         return Err(ValidationError::MapperEntryError(errors));
     }
 
     Ok(())
+}
+
+/// Checks for various types of duplicate field errors in a mapper entry
+///
+/// This function checks for:
+/// - Fields used as both source and destination
+/// - Duplicate source fields
+/// - Duplicate destination fields
+fn check_duplicate_fields(entry: &MapperEntry, errors: &mut Vec<FieldError>) {
+    // Count occurrences of source and destination fields
+    let mut source_counts = HashMap::new();
+    let mut dest_counts = HashMap::new();
+    
+    for map_value in &entry.map {
+        // Count source fields
+        *source_counts.entry(map_value.from_field.clone()).or_insert(0) += 1;
+        
+        // Count destination fields if they exist
+        if let Some(ref to_field) = map_value.to_field {
+            *dest_counts.entry(to_field.clone()).or_insert(0) += 1;
+        }
+    }
+
+    check_overlapping_fields(entry, &source_counts, &dest_counts, errors);
+    check_duplicate_source_fields(entry, source_counts, errors);
+    check_duplicate_dest_fields(entry, dest_counts, errors);
+}
+
+/// Checks for fields used as both source and destination in a mapper entry
+fn check_overlapping_fields(
+    entry: &MapperEntry,
+    source_counts: &HashMap<String, u8>,
+    dest_counts: &HashMap<String, u8>,
+    errors: &mut Vec<FieldError>
+) {
+    let overlapping_fields: Vec<String> = dest_counts
+        .keys()
+        .filter(|key| source_counts.contains_key(*key))
+        .cloned()
+        .collect();
+
+    if !overlapping_fields.is_empty() {
+        errors.push(FieldError::DupField(format!(
+            "duplicate mapping destination keys found in dto={} entry: {:?}",
+            entry.dto, overlapping_fields
+        )));
+    }
+}
+
+/// Checks for duplicate source fields in a mapper entry
+fn check_duplicate_source_fields(
+    entry: &MapperEntry,
+    source_counts: HashMap<String, u8>,
+    errors: &mut Vec<FieldError>
+) {
+    let duplicate_sources: Vec<String> = source_counts
+        .into_iter()
+        .filter(|(_, count)| *count > 1)
+        .map(|(field, _)| field)
+        .collect();
+
+    if !duplicate_sources.is_empty() {
+        errors.push(FieldError::DupField(format!(
+            "duplicate source key names found in dto={} entry: {:?}",
+            entry.dto, duplicate_sources
+        )));
+    }
+}
+
+/// Checks for duplicate destination fields in a mapper entry
+fn check_duplicate_dest_fields(
+    entry: &MapperEntry,
+    dest_counts: HashMap<String, u8>,
+    errors: &mut Vec<FieldError>
+) {
+    let duplicate_destinations: Vec<String> = dest_counts
+        .into_iter()
+        .filter(|(_, count)| *count > 1)
+        .map(|(field, _)| field)
+        .collect();
+
+    if !duplicate_destinations.is_empty() {
+        errors.push(FieldError::DupField(format!(
+            "duplicate destination key names found in dto={} entry: {:?}",
+            entry.dto, duplicate_destinations
+        )));
+    }
 }

@@ -46,7 +46,7 @@ impl StructEntry {
             })
             .collect();
         //let struct_entry = StructEntry::default();
-        syn::Result::Ok(Self {
+        Ok(Self {
             name: struct_name,
             field_entries: struct_entries,
         })
@@ -66,29 +66,4 @@ pub fn is_type_option(a_type: &Type) -> bool {
     }
     //return false by default
     false
-}
-
-fn _ty_inner_type<'a>(wrapper: &str, ty: &'a syn::Type) -> Option<&'a syn::Type> {
-    if let syn::Type::Path(ref p) = ty {
-        //println!("segment len: {}",p.path.segments.len());
-        /*if p.path.segments.len()>0 {
-            println!("Segment Ident={}", p.path.segments[0].ident);
-        }*/
-        if p.path.segments.len() != 1 || p.path.segments[0].ident != wrapper {
-            return None;
-        }
-
-        if let syn::PathArguments::AngleBracketed(ref inner_ty) = p.path.segments[0].arguments {
-            if inner_ty.args.len() != 1 {
-                return None;
-            }
-
-            let inner_ty = inner_ty.args.first().unwrap();
-
-            if let syn::GenericArgument::Type(ref t) = inner_ty {
-                return Some(t);
-            }
-        }
-    }
-    None
 }
