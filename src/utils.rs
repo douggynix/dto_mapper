@@ -1,10 +1,9 @@
-pub fn remove_white_space(str: &String) -> String {
-    str.as_str()
-        .chars()
-        .filter(|c| !c.is_whitespace())
-        .collect()
+/// Removes all whitespace characters from a string
+pub fn remove_white_space(s: &str) -> String {
+    s.chars().filter(|c| !c.is_whitespace()).collect()
 }
 
-pub fn isblank(str: &String) -> bool {
-    remove_white_space(str).is_empty()
+/// Checks if a string is blank (empty or only whitespace)
+pub fn isblank(s: &str) -> bool {
+    s.trim().is_empty()
 }

@@ -1,15 +1,14 @@
-use syn::Type;
-use syn::{Data, DataStruct, DeriveInput, Fields};
+use syn::{Data, DataStruct, DeriveInput, Fields, Type};
 
-//A StructEntry will hold the structure name and a list(vector) of FieldEntry
-#[derive(Default)]
+/// Represents a struct with its name and fields
+#[derive(Default, Debug)]
 pub struct StructEntry {
     pub name: String,
     pub field_entries: Vec<FieldEntry>,
 }
 
-//FieldEntry will hold data about a field from a struct such that its name, and its type
-#[derive(Clone)]
+/// Represents a field in a struct with its name, type, and optionality
+#[derive(Clone, Debug)]
 pub struct FieldEntry {
     pub field_name: String,
     pub field_type: Type,
@@ -17,78 +16,81 @@ pub struct FieldEntry {
 }
 
 impl StructEntry {
+    /// Builds a StructEntry from a DeriveInput
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - The parsed derive input
+    ///
+    /// # Returns
+    ///
+    /// * `syn::Result<Self>` - The constructed StructEntry or an error
     pub fn build_struct_entry(input: Box<DeriveInput>) -> syn::Result<Self> {
-        let struct_name = format!("{}", input.ident);
-        let fields = if let Data::Struct(DataStruct {
-            fields: Fields::Named(syn::FieldsNamed { ref named, .. }),
-            ..
-        }) = input.data
-        {
-            named
-        } else {
-            unimplemented!("Implemented only for structure not other type")
-        };
+        let struct_name = input.ident.to_string();
+        let fields = Self::extract_fields(&input)?;
 
-        let struct_entries: Vec<FieldEntry> = fields
+        let field_entries = fields
             .iter()
             .map(|field| {
-                //let name = format!("{:?}",field.ident);
-                let name = field.clone().ident.unwrap().to_string();
-
-                let has_option = is_type_option(&field.ty);
-                //println!("field={} is_optional={}",name,has_option);
+                let field_name = field.ident.clone().unwrap().to_string();
+                let is_optional = is_type_option(&field.ty);
 
                 FieldEntry {
-                    field_name: name,
+                    field_name,
                     field_type: field.ty.clone(),
-                    is_optional: has_option,
+                    is_optional,
                 }
             })
             .collect();
-        //let struct_entry = StructEntry::default();
-        syn::Result::Ok(Self {
+
+        Ok(Self {
             name: struct_name,
-            field_entries: struct_entries,
+            field_entries,
         })
     }
+
+    /// Extracts fields from a DeriveInput
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - The parsed derive input
+    ///
+    /// # Returns
+    ///
+    /// * `syn::Result<&Punctuated<Field, Comma>>` - The fields or an error
+    fn extract_fields(
+        input: &DeriveInput,
+    ) -> syn::Result<&syn::punctuated::Punctuated<syn::Field, syn::token::Comma>> {
+        match &input.data {
+            Data::Struct(DataStruct {
+                fields: Fields::Named(named_fields),
+                ..
+            }) => Ok(&named_fields.named),
+            _ => Err(syn::Error::new_spanned(
+                input.ident.clone(),
+                "DtoMapper only supports structs with named fields",
+            )),
+        }
+    }
 }
 
-//https://github.com/jonhoo/proc-macro-workshop/blob/master/builder/src/lib.rs
-//this code snippet is inspired from the builder workshop for syn library
-//This is to figure out if type is an option
+/// Determines if a type is an Option<T>
+///
+/// # Arguments
+///
+/// * `a_type` - The type to check
+///
+/// # Returns
+///
+/// * `bool` - True if the type is an Option<T>, false otherwise
 pub fn is_type_option(a_type: &Type) -> bool {
-    if let Type::Path(ref p) = a_type {
-        if p.path.segments.len() > 0 && p.path.segments[0].ident == "Option" {
-            return true;
+    if let Type::Path(path_type) = a_type {
+        if let Some(segment) = path_type.path.segments.first() {
+            if segment.ident == "Option" {
+                return true;
+            }
         }
-
-        return false;
     }
-    //return false by default
+
     false
-}
-
-fn _ty_inner_type<'a>(wrapper: &str, ty: &'a syn::Type) -> Option<&'a syn::Type> {
-    if let syn::Type::Path(ref p) = ty {
-        //println!("segment len: {}",p.path.segments.len());
-        /*if p.path.segments.len()>0 {
-            println!("Segment Ident={}", p.path.segments[0].ident);
-        }*/
-        if p.path.segments.len() != 1 || p.path.segments[0].ident != wrapper {
-            return None;
-        }
-
-        if let syn::PathArguments::AngleBracketed(ref inner_ty) = p.path.segments[0].arguments {
-            if inner_ty.args.len() != 1 {
-                return None;
-            }
-
-            let inner_ty = inner_ty.args.first().unwrap();
-
-            if let syn::GenericArgument::Type(ref t) = inner_ty {
-                return Some(t);
-            }
-        }
-    }
-    None
 }

@@ -1,6 +1,10 @@
 ### Changelog
 All related changes will be logged here.
 
+## [0.3.2] 2025-06-14
+- refactoring dto mapper code base for maintenability and readability
+- no new features added
+
 ## [0.3.1] 2024-12-28
 - Fixing bug that erroneously removing white space from attributes
   For example, before,  an attribute like this:
